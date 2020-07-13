@@ -5,7 +5,9 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-
+let a = 5
+console.log(a);
+console.log('12312312312');
 
 
 // Take the text parameter passed to this HTTP endpoint and insert it into 
