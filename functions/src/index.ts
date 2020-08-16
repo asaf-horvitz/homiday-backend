@@ -15,6 +15,8 @@
  */
 'use strict';
 
+
+const delay = require('delay');
 import * as functions from 'firebase-functions';
 const admin = require('firebase-admin');
 const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
@@ -25,11 +27,18 @@ const db = admin.firestore();
 
 (async () => {
     const docRef = db.collection('users').doc('alovelace3');
+    try {
     await docRef.set({
         first: 'Ada',
         last: 'Lovelace',
-        born: 1815
+        born: 2222
       });
+      console.log('done!!!');
+    }
+    catch (ex) {
+        console.log('Error!!!');
+        console.log(ex);         
+    }
     console.log('Test!');
   })();
 
@@ -47,3 +56,9 @@ console.log('555');
 export const helloWorld2 = functions.https.onRequest((request, response) => {
  response.send('Hello from Firebase!\n\n');
 });
+
+(async () => {
+    while (true) {
+
+    console.log('111');
+    await delay(1000);}})();
