@@ -15,7 +15,23 @@
  */
 'use strict';
 
-import * as functions from 'firebase-functions'
+import * as functions from 'firebase-functions';
+const admin = require('firebase-admin');
+const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
+
+
+admin.initializeApp({credential: admin.credential.cert(serviceAccount)});
+const db = admin.firestore();
+
+(async () => {
+    const docRef = db.collection('users').doc('alovelace3');
+    await docRef.set({
+        first: 'Ada',
+        last: 'Lovelace',
+        born: 1815
+      });
+    console.log('Test!');
+  })();
 
 // if you need to use the Firebase Admin SDK, uncomment the following:
 // import * as admin from 'firebase-admin'
