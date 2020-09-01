@@ -40,8 +40,8 @@ const db = admin.firestore();
 console.log('555');
 const GOOGLE_API = 'AIzaSyAKJiNmu2tVrAtNn04T_AF3lvOsbo_Y2Ow';
 
-
-handleAutoComplete('12321232', 'ramat');
+getLocationFromPlaceId('ChIJd8BlQ2BZwokRAFUEcm_qrcA');
+//handleAutoComplete('12321232', 'haprahim 11 ramat hasharon');
 
 export const helloWorld2 = functions.https.onRequest((request, response) => {
 
@@ -67,50 +67,78 @@ function FormatString(str: string, ...val: string[]) {
   }
   return str;
 }
+
+async function getLocationFromPlaceId(placeId: string) {
+  let url = 'https://maps.googleapis.com/maps/api/geocode/json?place_id={0}&key={1}';
+  url = FormatString(url, placeId, GOOGLE_API);
+  try {
+    const res = await axios.post(url);
+    console.log('response....')
+    let location: {} = {};
+    location['lat'] = res.data.results[0].geometry.location.lat;
+    location['lon'] = res.data.results[0].geometry.location.lat;
+    location['northeastLat'] = (res.data.results[0].geometry.viewport.northeast.lat)
+    location['northeastLon'] = (res.data.results[0].geometry.viewport.northeast.lon)
+    location['southwestLat'] = (res.data.results[0].geometry.viewport.southwest.lat)
+    location['southwestLon'] = (res.data.results[0].geometry.viewport.southwest.lon)
+    return location
+  }
+  catch (ex) {
+    console.log(ex);
+    return null
+  }
+}
+
+export const getLocation = functions.https.onRequest((request, response) => {
+  (async () => {
+    try {
+      let body = request.body;
+      let results: {} = await getLocationFromPlaceId(body.placeId);
+
+      response.send(results);
+    }
+    catch (ex) {
+        console.log(ex);         
+        response.send(null);
+      }
+  })();
+});
+
 async function handleAutoComplete(sessionId : string, word: string)  {
-  let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input="{0}"&key={1}&sessiontoken={2}';  
-  url = FormatString(url, word, GOOGLE_API, sessionId);
+  let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input="{0}"&key={1}&sessiontoken={2}&language=he';
+  url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId));
 
   console.log('before');
   const res = await axios.post(url);
+  let results: any = [];
   if (res.status == 200) {
     console.log(res.data);
     if (Object.keys(res).includes('data') && Object.keys(res.data).includes('predictions')) {
       console.log('very good');
-      const presictions: JSON[] = Array.of(res.data.predictions);
+      const presictions: JSON[] = Array.of(res.data.predictions)[0];
+      console.log('inside');
       console.log(presictions.length);
+
+      for (let i = 0; i < presictions.length; i++) {
+        console.log(presictions[i])
+        results.push({placeId: presictions[i]['place_id'], description: presictions[i]['description']});
+      }      
     }
-
-    
-
   }
-  console.log(res);
-
-
-  
-
+  return results;
 }
 
 export const autoComplete = functions.https.onRequest((request, response) => {
   (async () => {
     try {
-      await handleAutoComplete('12321312312', 'ramat');
-      response.send('success');
+      let body = request.body;
+      let results: [] = await handleAutoComplete(body.sessionId, body.place);
+
+      response.send(results);
     }
     catch (ex) {
-        console.log('Error!!!');
-        console.log(ex);         
-        response.send('fail');
+        console.log('Error!!!' + ex);         
+        response.send(null);
       }
-    console.log('Test!');
   })();
-
 });
-
-/*
-(async () => {
-    while (true) {
-
-    console.log('111');
-    await delay(1000);}})();
-*/

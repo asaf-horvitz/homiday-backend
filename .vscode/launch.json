@@ -12,6 +12,8 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\functions\\src\\index.ts",
+            "preLaunchTask": "tsc: build - functions/tsconfig.json",
+
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
