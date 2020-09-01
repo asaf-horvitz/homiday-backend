@@ -37,10 +37,9 @@ const db = admin.firestore();
 //    cd functions
 //    npm run deploy
 
-console.log('555');
 const GOOGLE_API = 'AIzaSyAKJiNmu2tVrAtNn04T_AF3lvOsbo_Y2Ow';
 
-getLocationFromPlaceId('ChIJd8BlQ2BZwokRAFUEcm_qrcA');
+//getLocationFromPlaceId('ChIJd8BlQ2BZwokRAFUEcm_qrcA');
 //handleAutoComplete('12321232', 'haprahim 11 ramat hasharon');
 
 export const helloWorld2 = functions.https.onRequest((request, response) => {
@@ -78,14 +77,14 @@ async function getLocationFromPlaceId(placeId: string) {
     location['lat'] = res.data.results[0].geometry.location.lat;
     location['lon'] = res.data.results[0].geometry.location.lat;
     location['northeastLat'] = (res.data.results[0].geometry.viewport.northeast.lat)
-    location['northeastLon'] = (res.data.results[0].geometry.viewport.northeast.lon)
+    location['northeastLon'] = (res.data.results[0].geometry.viewport.northeast.lng)
     location['southwestLat'] = (res.data.results[0].geometry.viewport.southwest.lat)
-    location['southwestLon'] = (res.data.results[0].geometry.viewport.southwest.lon)
+    location['southwestLon'] = (res.data.results[0].geometry.viewport.southwest.lng)
     return location
   }
   catch (ex) {
     console.log(ex);
-    return null
+    return {}
   }
 }
 
@@ -99,13 +98,13 @@ export const getLocation = functions.https.onRequest((request, response) => {
     }
     catch (ex) {
         console.log(ex);         
-        response.send(null);
+        response.send({});
       }
   })();
 });
 
 async function handleAutoComplete(sessionId : string, word: string)  {
-  let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input="{0}"&key={1}&sessiontoken={2}&language=he';
+  let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input="{0}"&key={1}&sessiontoken={2}';
   url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId));
 
   console.log('before');
@@ -114,14 +113,14 @@ async function handleAutoComplete(sessionId : string, word: string)  {
   if (res.status == 200) {
     console.log(res.data);
     if (Object.keys(res).includes('data') && Object.keys(res.data).includes('predictions')) {
-      console.log('very good');
       const presictions: JSON[] = Array.of(res.data.predictions)[0];
-      console.log('inside');
       console.log(presictions.length);
 
       for (let i = 0; i < presictions.length; i++) {
         console.log(presictions[i])
-        results.push({placeId: presictions[i]['place_id'], description: presictions[i]['description']});
+        results.push({placeId: presictions[i]['place_id'], mainText: presictions[i]['structured_formatting']['main_text']
+        , secondaryText: presictions[i]['structured_formatting']['secondary_text']});
+
       }      
     }
   }
@@ -138,7 +137,7 @@ export const autoComplete = functions.https.onRequest((request, response) => {
     }
     catch (ex) {
         console.log('Error!!!' + ex);         
-        response.send(null);
+        response.send({});
       }
   })();
 });
