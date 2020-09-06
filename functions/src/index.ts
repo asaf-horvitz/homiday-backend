@@ -65,13 +65,13 @@ export const getUserProfile = functions.https.onRequest((request, response) => {
       const docRef = db.collection('users').doc(userId);
       const doc = await docRef.get();
       if (!doc.exists)
-        return response.send({});
+        return response.send(null);
       
       return response.send(doc.data());
     }
     catch (ex) {
         console.log('Error!!!' + ex);         
-        return response.send({});
+        return response.send(null);
       }
   })();
 });
