@@ -62,12 +62,16 @@ export const getUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
     try {
       let userId = request.body.userId;
-
-      response.send('1111');
+      const docRef = db.collection('users').doc(userId);
+      const doc = await docRef.get();
+      if (!doc.exists)
+        return response.send({});
+      
+      return response.send(doc.data());
     }
     catch (ex) {
         console.log('Error!!!' + ex);         
-        response.send({});
+        return response.send({});
       }
   })();
 });
