@@ -43,6 +43,21 @@ export const getLocation = functions.https.onRequest((request, response) => {
   })();
 });
 
+export const setUserProfile = functions.https.onRequest((request, response) => {
+  (async () => {
+    try {
+      let userId = request.body.userId;
+      const docRef = db.collection('users').doc(userId);
+      await docRef.set(request.body);
+      response.send('OK');
+    }
+    catch (ex) {
+        console.log('Error!!!' + ex);
+        response.send({});
+      }
+  })();
+});
+
 export const getUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
     try {
