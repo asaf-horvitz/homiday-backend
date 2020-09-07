@@ -91,20 +91,25 @@ export const setUserProfile = functions.https.onRequest((request, response) => {
     try {
       let userId = request.body.userId;
       const docRef = db.collection('users').doc(userId);
-      await docRef.set(request.body);
-
+      
       let profileImageSha256 = sha256(request.body.profileImage);
       if (!await fileExists(profileImageSha256,IMAGES_BUCKET_NAME)) {
         let buff = new Buffer(request.body.profileImage, 'base64');
         await uploadFileUsingBuffer(buff, profileImageSha256, IMAGES_BUCKET_NAME);
       }
       request.body.profileImageSha256 = profileImageSha256;
-      //for (let image in request.body.) 
+      let imagesSha256List = new Array();
+      for (let imageBase64 of request.body.images) 
       {
-
+        let imageSha256 = sha256(imageBase64);
+        imagesSha256List.push(imageSha256);
+        if (!await fileExists(imageBase64,IMAGES_BUCKET_NAME)) {
+          let buff = new Buffer(imageBase64, 'base64');
+          await uploadFileUsingBuffer(buff, imageSha256, IMAGES_BUCKET_NAME);
+        }
       }
-      //let text = buff.toString('ascii');
-//      uploadFileUsingBuffer(buff, )
+      request.body.imagesSha256 = imagesSha256List;
+      await docRef.set(request.body);
 
       response.send('OK');
     }
