@@ -10,10 +10,13 @@ const admin = require('firebase-admin');
 const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
 import {getLocationFromPlaceId, handleAutoComplete} from './auto_complete';
 import { storage } from 'firebase-admin';
+import { json } from 'express';
 
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+
+
 
 admin.initializeApp({credential: admin.credential.cert(serviceAccount)});
 const db = admin.firestore();
@@ -121,6 +124,37 @@ export const setUserProfile = functions.https.onRequest((request, response) => {
       }
   })();
 });
+
+export const getImages = functions.https.onRequest((request, response) => {
+  (async () => {
+    try {
+      let imagesSha256 = request.body.imagesSha256;
+      let fileLenArray = new Array();
+      let filePathArray = new Array();
+      let allFiles = new Buffer('');
+      for (let imageSha256 of imagesSha256)  
+      {
+        let filePath: string = await downloadFile(imageSha256, IMAGES_BUCKET_NAME);
+        filePathArray.push(filePath)
+        let fileLen = 0;
+        var fileBuffer = new Buffer('')
+        if (filePath != null) {
+          fileBuffer = fs.readFileSync(filePath);
+        }
+        fileLenArray.push({imageSha256: fileBuffer.byteLength});
+        allFiles = Buffer.concat([allFiles, fileBuffer])
+      }
+      response.writeHead(200, {'filesList':JSON.stringify(fileLenArray)});
+      response.write(allFiles.toString('binary'), 'binary');
+      return response.end();
+    }
+    catch (ex) {
+        console.log('Error!!!' + ex);         
+        return response.send('error');
+      }
+  })();
+});
+
 
 export const getUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
