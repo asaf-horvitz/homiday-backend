@@ -1,32 +1,75 @@
-/**
- * Copyright 2017 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 'use strict';
-
 
 const delay = require('delay');
 const util = require('util');
 const axios = require('axios')
+var sha256 = require('js-sha256');
+
 import * as functions from 'firebase-functions';
 const admin = require('firebase-admin');
 const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
 import {getLocationFromPlaceId, handleAutoComplete} from './auto_complete';
+import { storage } from 'firebase-admin';
+
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
 
 admin.initializeApp({credential: admin.credential.cert(serviceAccount)});
 const db = admin.firestore();
 
+var storageRef = admin.storage();
+var bucket = storageRef.bucket('homiday-images');
+
+const IMAGES_BUCKET_NAME = "homiday-images"
+
+async function downloadFile(storageFileName : string, bucketName: string): Promise<string> {
+  try {
+    var bucket = storageRef.bucket(bucketName);
+    const tempFilePath : string = path.join(os.tmpdir(), storageFileName);  
+    await bucket.file(storageFileName).download({destination: tempFilePath});
+    return tempFilePath;
+  }
+  catch (ex) {
+     console.log(ex)
+    return null;
+  }
+}
+
+async function uploadFileUsingBuffer(buffer: Buffer, storageFileName : string, bucketName: string): Promise<boolean> {
+  const tempFilePath : string = path.join(os.tmpdir(), storageFileName);
+  fs.open(tempFilePath, 'w', function(err, fd) {
+    if (err) {
+        throw 'could not open file: ' + err;
+    }
+
+    // write the contents of the buffer, from position 0 to the end, to the file descriptor returned in opening our file
+    fs.write(fd, buffer, 0, buffer.length, null, function(err) {
+        if (err) throw 'error writing file: ' + err;
+        fs.close(fd, function() {
+            console.log('wrote the file successfully');
+        });
+    });
+  });
+  return uploadFile(tempFilePath, storageFileName, bucketName);
+}
+
+async function fileExists(storageFileName : string, bucketName: string): Promise<boolean> {
+  return await downloadFile(storageFileName, bucketName)  != null;
+}
+
+
+async function uploadFile(localFileName: string, storageFileName : string, bucketName: string): Promise<boolean> {
+  try {
+    var bucket = storageRef.bucket(bucketName);
+    await bucket.upload(localFileName, {destination: storageFileName});
+  return true;
+  }
+  catch (ex) {
+    console.log(ex)
+    return false;
+  }
+}
 
 export const getLocation = functions.https.onRequest((request, response) => {
   (async () => {
@@ -49,6 +92,20 @@ export const setUserProfile = functions.https.onRequest((request, response) => {
       let userId = request.body.userId;
       const docRef = db.collection('users').doc(userId);
       await docRef.set(request.body);
+
+      let profileImageSha256 = sha256(request.body.profileImage);
+      if (!await fileExists(profileImageSha256,IMAGES_BUCKET_NAME)) {
+        let buff = new Buffer(request.body.profileImage, 'base64');
+        await uploadFileUsingBuffer(buff, profileImageSha256, IMAGES_BUCKET_NAME);
+      }
+      request.body.profileImageSha256 = profileImageSha256;
+      //for (let image in request.body.) 
+      {
+
+      }
+      //let text = buff.toString('ascii');
+//      uploadFileUsingBuffer(buff, )
+
       response.send('OK');
     }
     catch (ex) {
