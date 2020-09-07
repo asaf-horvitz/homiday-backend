@@ -11,12 +11,11 @@ const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
 import {getLocationFromPlaceId, handleAutoComplete} from './auto_complete';
 import { storage } from 'firebase-admin';
 import { json } from 'express';
+import { TSMap } from "typescript-map"
 
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-
-
 
 admin.initializeApp({credential: admin.credential.cert(serviceAccount)});
 const db = admin.firestore();
@@ -141,7 +140,10 @@ export const getImages = functions.https.onRequest((request, response) => {
         if (filePath != null) {
           fileBuffer = fs.readFileSync(filePath);
         }
-        fileLenArray.push({imageSha256: fileBuffer.byteLength});
+        var myMap = new TSMap();
+        myMap.set(imageSha256, fileBuffer.byteLength);
+
+        fileLenArray.push(myMap);
         allFiles = Buffer.concat([allFiles, fileBuffer])
       }
       response.writeHead(200, {'filesList':JSON.stringify(fileLenArray)});
