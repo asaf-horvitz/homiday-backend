@@ -108,6 +108,8 @@ export const setUserProfile = functions.https.onRequest((request, response) => {
           await uploadFileUsingBuffer(buff, imageSha256, IMAGES_BUCKET_NAME);
         }
       }
+      request.body.images = 'use only for profile update';
+      request.body.profileImage = 'use only for profile update';
       request.body.imagesSha256 = imagesSha256List;
       await docRef.set(request.body);
 
