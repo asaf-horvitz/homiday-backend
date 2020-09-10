@@ -3,7 +3,9 @@
 const delay = require('delay');
 const util = require('util');
 const axios = require('axios')
-var sha256 = require('js-sha256');
+const sha256 = require('js-sha256');
+const sharp = require('sharp');
+const tempfile = require('tempfile');
 
 import * as functions from 'firebase-functions';
 const admin = require('firebase-admin');
@@ -24,6 +26,7 @@ var storageRef = admin.storage();
 var bucket = storageRef.bucket('homiday-images');
 
 const IMAGES_BUCKET_NAME = "homiday-images"
+const LOW_RES_IMAGES_BUCKET_NAME = "homiday-low-res-images"
 
 async function downloadFile(storageFileName : string, bucketName: string): Promise<string> {
   try {
@@ -88,27 +91,40 @@ export const getLocation = functions.https.onRequest((request, response) => {
   })();
 });
 
+async function insertImageToBucket(bufferBase64: string) : Promise<string> {
+  let profileImageSha256 = await sha256(bufferBase64);
+  if (await fileExists(profileImageSha256,IMAGES_BUCKET_NAME)) 
+    return profileImageSha256;
+  const inputJpg: string = tempfile();
+  const outputJpg: string = tempfile();
+
+  let buff = await new Buffer(bufferBase64, 'base64');
+
+  fs.writeFileSync(inputJpg,buff);
+  
+  await sharp(inputJpg).jpeg({quality: 50}).toFile(outputJpg);
+  
+  await uploadFile(outputJpg, profileImageSha256, LOW_RES_IMAGES_BUCKET_NAME);
+  await uploadFileUsingBuffer(buff, profileImageSha256, IMAGES_BUCKET_NAME);
+  return profileImageSha256;
+}
+
 export const setUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
     try {
       let userId = request.body.userId;
       const docRef = db.collection('users').doc(userId);
-      
-      let profileImageSha256 = sha256(request.body.profileImage);
-      if (!await fileExists(profileImageSha256,IMAGES_BUCKET_NAME)) {
-        let buff = new Buffer(request.body.profileImage, 'base64');
-        await uploadFileUsingBuffer(buff, profileImageSha256, IMAGES_BUCKET_NAME);
-      }
-      request.body.profileImageSha256 = profileImageSha256;
+      await insertImageToBucket(request.body.profileImage);
+
       let imagesSha256List = new Array();
+
+
+
       for (let imageBase64 of request.body.images) 
       {
-        let imageSha256 = sha256(imageBase64);
+        if (imageBase64 == '') continue;
+        let imageSha256 = await insertImageToBucket(imageBase64);
         imagesSha256List.push(imageSha256);
-        if (!await fileExists(imageBase64,IMAGES_BUCKET_NAME)) {
-          let buff = new Buffer(imageBase64, 'base64');
-          await uploadFileUsingBuffer(buff, imageSha256, IMAGES_BUCKET_NAME);
-        }
       }
       request.body.images = 'use only for profile update';
       request.body.profileImage = 'use only for profile update';
@@ -131,7 +147,7 @@ export const getImages = functions.https.onRequest((request, response) => {
       let fileLenArray = new Array();
       let filePathArray = new Array();
       let allFiles = new Buffer('');
-      for (let imageSha256 of imagesSha256)  
+      for (let imageSha256 of imagesSha256)
       {
         let filePath: string = await downloadFile(imageSha256, IMAGES_BUCKET_NAME);
         filePathArray.push(filePath)
@@ -146,7 +162,8 @@ export const getImages = functions.https.onRequest((request, response) => {
         fileLenArray.push(myMap);
         allFiles = Buffer.concat([allFiles, fileBuffer])
       }
-      response.writeHead(200, {'filesList':JSON.stringify(fileLenArray)});
+//      response.writeHead(200, {"Content-Type": "application/octet-stream", 'filesList':JSON.stringify(fileLenArray)});
+      response.writeHead(200, {"Content-Type": "application/x-binary", 'filesList':JSON.stringify(fileLenArray)});
       response.write(allFiles.toString('binary'), 'binary');
       return response.end();
     }
