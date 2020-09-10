@@ -1,5 +1,6 @@
 'use strict';
 
+import * as functions from 'firebase-functions';
 const delay = require('delay');
 const util = require('util');
 const axios = require('axios')
@@ -7,10 +8,9 @@ const sha256 = require('js-sha256');
 const sharp = require('sharp');
 const tempfile = require('tempfile');
 
-import * as functions from 'firebase-functions';
-const admin = require('firebase-admin');
-const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
+import {IMAGES_BUCKET_NAME,LOW_RES_IMAGES_BUCKET_NAME,storageRef, db } from './firebase';
 import {getLocationFromPlaceId, handleAutoComplete} from './auto_complete';
+import {getUserProfileReponse} from './profile_managment';
 import { storage } from 'firebase-admin';
 import { json } from 'express';
 import { TSMap } from "typescript-map"
@@ -19,14 +19,6 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
-admin.initializeApp({credential: admin.credential.cert(serviceAccount)});
-const db = admin.firestore();
-
-var storageRef = admin.storage();
-var bucket = storageRef.bucket('homiday-images');
-
-const IMAGES_BUCKET_NAME = "homiday-images"
-const LOW_RES_IMAGES_BUCKET_NAME = "homiday-low-res-images"
 
 async function downloadFile(storageFileName : string, bucketName: string): Promise<string> {
   try {
@@ -116,11 +108,11 @@ export const setUserProfile = functions.https.onRequest((request, response) => {
     try {
       let userId = request.body.userId;
       const docRef = db.collection('users').doc(userId);
-      await insertImageToBucket(request.body.profileImage);
+      if (request.body.profileImageSha256 != '') {
+        request.body.profileImageSha256 = await insertImageToBucket(request.body.profileImage);
+      }
 
       let imagesSha256List = new Array();
-
-
 
       for (let imageBase64 of request.body.images) 
       {
@@ -152,6 +144,8 @@ export const getImages = functions.https.onRequest((request, response) => {
       for (let imageSha256 of imagesSha256)
       {
         let filePath: string = await downloadFile(imageSha256, IMAGES_BUCKET_NAME);
+        if (filePath == null)
+          continue;
         filePathArray.push(filePath)
         let fileLen = 0;
         var fileBuffer = new Buffer('')
@@ -180,13 +174,7 @@ export const getImages = functions.https.onRequest((request, response) => {
 export const getUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
     try {
-      let userId = request.body.userId;
-      const docRef = db.collection('users').doc(userId);
-      const doc = await docRef.get();
-      if (!doc.exists)
-        return response.send(null);
-      
-      return response.send(doc.data());
+      return response.send(await getUserProfileReponse(request.body.userId));
     }
     catch (ex) {
         console.log('Error!!!' + ex);         
