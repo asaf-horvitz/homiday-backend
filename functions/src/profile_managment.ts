@@ -44,7 +44,7 @@ async function insertImageToBucket(bufferBase64: string) : Promise<string> {
 
 export async function setUserProfileReponse(request : any, response: any) : Promise<any> {
   const docRef = db.collection('users').doc(request.body.userId);
-  if (request.body.profileImageSha256 != '') {
+  if (request.body.profileImageSha256 != undefined &&  request.body.profileImageSha256 != '') {
     request.body.profileImageSha256 = await insertImageToBucket(request.body.profileImage);
   }
 

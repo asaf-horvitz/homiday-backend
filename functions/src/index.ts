@@ -16,27 +16,14 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
-export const getLocation = functions.https.onRequest((request, response) => {
-  (async () => {
-    try {
-      let body = request.body;
-      let results: {} = await getLocationFromPlaceId(body.placeId);
-
-      response.send(results);
-    }
-    catch (ex) {
-        console.log(ex);         
-        response.send({});
-      }
-  })();
-});
-
 export const setUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
     try {
+      var location = await getLocationFromPlaceId(request)
+      request.body.location = location
       let userId = request.body.userId;
       await setUserProfileReponse(request, response);
-      response.send('OK');
+    response.send('OK');
     }
     catch (ex) {
         console.log('Error!!!' + ex);

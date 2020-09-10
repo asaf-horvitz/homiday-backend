@@ -7,7 +7,8 @@ const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
 
 const GOOGLE_API = 'AIzaSyAKJiNmu2tVrAtNn04T_AF3lvOsbo_Y2Ow';
 
-export async function getLocationFromPlaceId(placeId: string) {
+export async function getLocationFromPlaceId(request: any) {
+    let placeId: string = request.body.placeId
     let url = 'https://maps.googleapis.com/maps/api/geocode/json?place_id={0}&key={1}';
     url = FormatString(url, placeId, GOOGLE_API);
     try {
