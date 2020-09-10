@@ -106,6 +106,8 @@ async function insertImageToBucket(bufferBase64: string) : Promise<string> {
   
   await uploadFile(outputJpg, profileImageSha256, LOW_RES_IMAGES_BUCKET_NAME);
   await uploadFileUsingBuffer(buff, profileImageSha256, IMAGES_BUCKET_NAME);
+  fs.unlinkSync(inputJpg)
+  fs.unlinkSync(outputJpg)
   return profileImageSha256;
 }
 
