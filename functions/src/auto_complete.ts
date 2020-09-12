@@ -37,8 +37,9 @@ export async function getLocationFromPlaceId(request: any) {
   }
   
   export async function handleAutoComplete(sessionId : string, word: string,searchCitiesOnly: boolean)  {
-    let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?{3}&input="{0}"&key={1}&sessiontoken={2}';
-    let searchOnlyCitesAndStates = searchCitiesOnly ? '&types=(regions)' : 'address';
+    let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?&types={3}&input="{0}"&key={1}&sessiontoken={2}';
+    //let searchOnlyCitesAndStates = searchCitiesOnly ? '(regions)' : 'address';
+    let searchOnlyCitesAndStates = searchCitiesOnly ? 'address' : 'address';
     url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId,searchOnlyCitesAndStates));
   
     '&types=(regions)'
