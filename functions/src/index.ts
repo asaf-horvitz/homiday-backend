@@ -8,14 +8,17 @@ import {IMAGES_BUCKET_NAME,LOW_RES_IMAGES_BUCKET_NAME,storageRef, db } from './f
 import {getLocationFromPlaceId, handleAutoComplete} from './auto_complete';
 import {getUserProfileReponse, setUserProfileReponse} from './profile_managment';
 import {getImagesFromCloud} from './get_images';
+import {searchHomesNow} from './search_homes';
 import { storage } from 'firebase-admin';
 import { json } from 'express';
 import { TSMap } from "typescript-map"
+import { fileExistsInStorage } from './firebase_storage';
 
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
+const SEARCH_ONLY_CITIES = true;
 export const setUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
     try {
@@ -57,11 +60,35 @@ export const getUserProfile = functions.https.onRequest((request, response) => {
   })();
 });
 
+export const searchHomes = functions.https.onRequest((request, response) => {
+  (async () => {
+    try {
+      var x = await getLocationFromPlaceId("ChIJ9auRY3EdHBURMyOMe_aRB10")
+      
+      let body = request.body;
+      let placeId = body.placeId
+      let startDateList = body.startDateList
+      let endDateList = body.startDateList
+      let filters = body.filters
+
+      
+      searchHomesNow(placeId, startDateList, endDateList, filters);
+      let results: [] = await handleAutoComplete(body.sessionId, body.place, SEARCH_ONLY_CITIES);
+
+      response.send(results);
+    }
+    catch (ex) {
+        console.log('Error!!!' + ex);         
+        response.send({});
+      }
+  })();
+});
+
 export const autoComplete = functions.https.onRequest((request, response) => {
   (async () => {
     try {
       let body = request.body;
-      let results: [] = await handleAutoComplete(body.sessionId, body.place);
+      let results: [] = await handleAutoComplete(body.sessionId, body.place,!SEARCH_ONLY_CITIES);
 
       response.send(results);
     }

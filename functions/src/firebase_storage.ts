@@ -36,6 +36,14 @@ export async function downloadFileFromStorage(storageFileName : string, bucketNa
   }
   
   export async function fileExistsInStorage(storageFileName : string, bucketName: string): Promise<boolean> {
+    var bucket = storageRef.bucket(bucketName);
+    try {
+      return await bucket.file(storageFileName).exists()
+    }
+    catch {
+      return false;
+    }
+
     return await downloadFileFromStorage(storageFileName, bucketName)  != null;
   }
   

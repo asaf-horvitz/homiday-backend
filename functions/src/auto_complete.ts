@@ -8,15 +8,15 @@ const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
 const GOOGLE_API = 'AIzaSyAKJiNmu2tVrAtNn04T_AF3lvOsbo_Y2Ow';
 
 export async function getLocationFromPlaceId(request: any) {
-    let placeId: string = request.body.placeId
-    let url = 'https://maps.googleapis.com/maps/api/geocode/json?place_id={0}&key={1}';
+  let placeId: string = request.body.placeId
+  let url = 'https://maps.googleapis.com/maps/api/geocode/json?place_id={0}&key={1}';
     url = FormatString(url, placeId, GOOGLE_API);
     try {
       const res = await axios.post(url);
       console.log('response....')
       let location: {} = {};
       location['lat'] = res.data.results[0].geometry.location.lat;
-      location['lon'] = res.data.results[0].geometry.location.lat;
+      location['lon'] = res.data.results[0].geometry.location.lng;
       location['northeastLat'] = (res.data.results[0].geometry.viewport.northeast.lat)
       location['northeastLon'] = (res.data.results[0].geometry.viewport.northeast.lng)
       location['southwestLat'] = (res.data.results[0].geometry.viewport.southwest.lat)
@@ -36,10 +36,12 @@ export async function getLocationFromPlaceId(request: any) {
     return str;
   }
   
-  export async function handleAutoComplete(sessionId : string, word: string)  {
-    let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input="{0}"&key={1}&sessiontoken={2}';
-    url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId));
+  export async function handleAutoComplete(sessionId : string, word: string,searchCitiesOnly: boolean)  {
+    let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?{3}&input="{0}"&key={1}&sessiontoken={2}';
+    let searchOnlyCitesAndStates = searchCitiesOnly ? '&types=(regions)' : 'address';
+    url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId,searchOnlyCitesAndStates));
   
+    '&types=(regions)'
     console.log('before');
     const res = await axios.post(url);
     let results: any = [];
