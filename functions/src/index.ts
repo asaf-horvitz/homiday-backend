@@ -98,3 +98,16 @@ export const autoComplete = functions.https.onRequest((request, response) => {
       }
   })();
 });
+
+export const test = functions.https.onRequest((request, response) => {
+  (async () => {
+    try {
+      await getLocationFromPlaceId('ChIJTbFX6ioxHRURHn9WS3zh798');
+      response.send('ok');
+    }
+    catch (ex) {
+        console.log('Error!!!' + ex);         
+        response.send({});
+      }
+  })();
+});
