@@ -5,7 +5,7 @@ const delay = require('delay');
 const axios = require('axios')
 
 import {IMAGES_BUCKET_NAME,LOW_RES_IMAGES_BUCKET_NAME,storageRef, db } from './firebase';
-import {getLocationFromPlaceId, handleAutoComplete} from './auto_complete';
+import {getLocationFromPlaceId, handleAutoComplete} from './google_maps_api';
 import {getUserProfileReponse, setUserProfileReponse} from './profile_managment';
 import {getImagesFromCloud} from './get_images';
 import {searchHomesNow} from './search_homes';
