@@ -44,8 +44,9 @@ async function insertImageToBucket(bufferBase64: string) : Promise<string> {
 
 export async function setUserProfileReponse(request : any, response: any) : Promise<any> {
   const docRef = db.collection('users').doc(request.body.userId);
-  if (request.body.profileImageSha256 != undefined &&  request.body.profileImageSha256 != '') {
+  if (request.body.profileImage != undefined) {
     request.body.profileImageSha256 = await insertImageToBucket(request.body.profileImage);
+    delete(request.body.profileImage)
   }
 
   let imagesSha256List = new Array();
@@ -56,8 +57,7 @@ export async function setUserProfileReponse(request : any, response: any) : Prom
     let imageSha256 = await insertImageToBucket(imageBase64);
     imagesSha256List.push(imageSha256);
   }
-  request.body.images = 'use only for profile update';
-  request.body.profileImage = 'use only for profile update';
+  delete(request.body.images)
   request.body.imagesSha256 = imagesSha256List;
   await docRef.set(request.body);
   return 'OK';
