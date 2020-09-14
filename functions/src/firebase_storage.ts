@@ -16,7 +16,24 @@ export async function downloadFileFromStorage(storageFileName : string, bucketNa
       return null;
     }
   }
-  
+
+  // todo - note tested
+  export async function getdownloadedFilesUrl(filesNames : Set<string>, bucketName: string): Promise<Set<string>> {
+    try {
+      var bucket = storageRef.bucket(bucketName);
+      const downloadUrlFiles : Set<string> = new Set()
+      for (let fileName in filesNames) {
+        let downloadUrl = await bucket.file(fileName).getDownloadURL()
+        downloadUrlFiles.add(downloadUrl);
+      }
+      return downloadUrlFiles;
+    }
+    catch (ex) {
+       console.log(ex)
+      return null;
+    }
+  }
+
   export async function uploadFileUsingBufferToStorage(buffer: Buffer, storageFileName : string, bucketName: string): Promise<boolean> {
     const tempFilePath : string = path.join(os.tmpdir(), storageFileName);
     fs.open(tempFilePath, 'w', function(err, fd) {

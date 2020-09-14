@@ -71,8 +71,8 @@ export const searchHomes = functions.https.onRequest((request, response) => {
       const endDateList = body.startDateList
       const filters = body.filters
       
-      const results = await searchHomesNow(placeId, startDateList, endDateList, filters);
-      response.send(results);
+      const profiles = await searchHomesNow(placeId, startDateList, endDateList, filters);
+      response.send(profiles);
     }
     catch (ex) {
         console.log('Error!!!' + ex);         
