@@ -22,7 +22,7 @@ const SEARCH_ONLY_CITIES = true;
 export const setUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
     try {
-      var location = await getLocationFromPlaceId(request)
+      var location = await getLocationFromPlaceId(request.body.placeId)
       request.body.location = location
       let userId = request.body.userId;
       await setUserProfileReponse(request, response);
@@ -65,16 +65,13 @@ export const searchHomes = functions.https.onRequest((request, response) => {
     try {
       var x = await getLocationFromPlaceId("ChIJ9auRY3EdHBURMyOMe_aRB10")
       
-      let body = request.body;
-      let placeId = body.placeId
-      let startDateList = body.startDateList
-      let endDateList = body.startDateList
-      let filters = body.filters
-
+      const body = request.body;
+      const placeId = body.placeId
+      const startDateList = body.startDateList
+      const endDateList = body.startDateList
+      const filters = body.filters
       
-      searchHomesNow(placeId, startDateList, endDateList, filters);
-      let results: [] = await handleAutoComplete(body.sessionId, body.place, SEARCH_ONLY_CITIES);
-
+      const results = await searchHomesNow(placeId, startDateList, endDateList, filters);
       response.send(results);
     }
     catch (ex) {
