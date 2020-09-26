@@ -14,8 +14,8 @@ export async function getImagesFromCloud(imagesSha256 : Array<string>, response 
     let allFiles = new Buffer('');
     for (let imageSha256 of imagesSha256)
     {
-        let filePath: string = await downloadFileFromStorage(imageSha256, IMAGES_BUCKET_NAME);
-        if (filePath == null)
+        let filePath: string = await downloadFileFromStorage(imageSha256, LOW_RES_IMAGES_BUCKET_NAME);
+        if (filePath == null)   
         continue;
         filePathArray.push(filePath)
         let fileLen = 0;

@@ -1,10 +1,4 @@
-const delay = require('delay');
-const util = require('util');
 const axios = require('axios')
-import * as functions from 'firebase-functions';
-const admin = require('firebase-admin');
-const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
-
 const GOOGLE_API = 'AIzaSyAKJiNmu2tVrAtNn04T_AF3lvOsbo_Y2Ow';
 
 export async function getLocationFromPlaceId(placeId: string) {
@@ -41,10 +35,8 @@ export async function getLocationFromPlaceId(placeId: string) {
   }
   
   export async function handleAutoComplete(sessionId : string, word: string,searchCitiesOnly: boolean)  {
-    let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?&types={3}&input="{0}"&key={1}&sessiontoken={2}';
-    //let searchOnlyCitesAndStates = searchCitiesOnly ? '(regions)' : 'address';
-    let searchOnlyCitesAndStates = searchCitiesOnly ? 'address' : 'address';
-    url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId,searchOnlyCitesAndStates));
+    let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?&input="{0}"&key={1}&sessiontoken={2}';
+    url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId));
   
     '&types=(regions)'
     console.log('before');

@@ -1,7 +1,18 @@
 
+
 const admin = require('firebase-admin');
-const serviceAccount = require('c:/Users/asafh/work/projects/firebase.json');
-admin.initializeApp({credential: admin.credential.cert(serviceAccount)});
+const fs = require("fs"); // Or `import fs from "fs";` with ESM
+const credentialFile = 'c:/Users/asafh/work/projects/firebase.json'
+
+
+if (fs.existsSync(credentialFile)) {
+    admin.initializeApp({credential: admin.credential.cert(credentialFile)});
+}
+else {
+    admin.initializeApp()
+}
+
+
 export const db = admin.firestore();
 
 export var storageRef = admin.storage();

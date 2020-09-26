@@ -1,22 +1,12 @@
 'use strict';
 
 import * as functions from 'firebase-functions';
-const delay = require('delay');
 const axios = require('axios')
 
-import {IMAGES_BUCKET_NAME,LOW_RES_IMAGES_BUCKET_NAME,storageRef, db } from './firebase';
 import {getLocationFromPlaceId, handleAutoComplete} from './google_maps_api';
 import {getUserProfileReponse, setUserProfileReponse} from './profile_managment';
 import {getImagesFromCloud} from './get_images';
 import {searchHomesNow} from './search_homes';
-import { storage } from 'firebase-admin';
-import { json } from 'express';
-import { TSMap } from "typescript-map"
-import { fileExistsInStorage } from './firebase_storage';
-
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
 
 const SEARCH_ONLY_CITIES = true;
 export const setUserProfile = functions.https.onRequest((request, response) => {
@@ -43,6 +33,19 @@ export const getImages = functions.https.onRequest((request, response) => {
     catch (ex) {
         console.log('Error!!!' + ex);         
         return response.send('error');
+      }
+  })();
+});
+
+export const getLocationDetailsFromPlaceId = functions.https.onRequest((request, response) => {
+  (async () => {
+    try {
+      var locationDetails = await getLocationFromPlaceId(request.body.placeId);
+      return response.send(locationDetails);
+    }
+    catch (ex) {
+        console.log('Error!!!' + ex);         
+        return response.send(null);
       }
   })();
 });
