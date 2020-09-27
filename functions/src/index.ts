@@ -12,8 +12,6 @@ const SEARCH_ONLY_CITIES = true;
 export const setUserProfile = functions.https.onRequest((request, response) => {
   (async () => {
     try {
-      var location = await getLocationFromPlaceId(request.body.placeId)
-      request.body.location = location
       let userId = request.body.userId;
       await setUserProfileReponse(request, response);
     response.send('OK');
