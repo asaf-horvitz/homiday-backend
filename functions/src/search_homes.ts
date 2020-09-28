@@ -18,9 +18,8 @@ export async function searchHomesNow(placeId : string, startDateList : any, endD
 
     let fetchCondition = {}
     let query = db.collection('users');    
-    // search location
     Object.keys(place['regions']).forEach(function(key) {
-        query = query.where('location.regions.' + key, '==', place['regions'][key])
+        query = query.where('location.geoLocation.regions.' + key, '==', place['regions'][key])
     });
 
     const results = await query.get();
