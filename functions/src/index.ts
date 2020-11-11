@@ -3,37 +3,7 @@
 import * as functions from 'firebase-functions';
 
 import {getLocationFromPlaceId, handleAutoComplete} from './google_maps_api';
-import {getUserProfileReponse, setUserProfileReponse} from './profile_managment';
-import {getImagesFromCloud} from './get_images';
-import {searchHomesNow} from './search_homes';
 //import { admin } from 'firebase-admin/lib/credential';
-
-const SEARCH_ONLY_CITIES = true;
-export const setUserProfile = functions.https.onRequest((request, response) => {
-  (async () => {
-    try {
-      const userId = request.body.userId;
-      await setUserProfileReponse(request, response);
-    response.send('OK');
-    }
-    catch (ex) {
-        console.log('Error!!!' + ex);
-        response.send({});
-      }
-  })();
-});
-
-export const getImages = functions.https.onRequest((request, response) => {
-  (async () => {
-    try {
-      return await getImagesFromCloud(request.body.imagesSha256, response);
-    }
-    catch (ex) {
-        console.log('Error!!!' + ex);         
-        return response.send('error');
-      }
-  })();
-});
 
 export const getLocationDetailsFromPlaceId = functions.https.onRequest((request, response) => {
   (async () => {
@@ -48,44 +18,11 @@ export const getLocationDetailsFromPlaceId = functions.https.onRequest((request,
   })();
 });
 
-export const getUserProfile = functions.https.onRequest((request, response) => {
-  (async () => {
-    try {
-      return response.send(await getUserProfileReponse(request.body.userId));
-    }
-    catch (ex) {
-        console.log('Error!!!' + ex);         
-        return response.send(null);
-      }
-  })();
-});
-
-export const searchHomes = functions.https.onRequest((request, response) => {
-  (async () => {
-    try {
-      var x = await getLocationFromPlaceId("ChIJ9auRY3EdHBURMyOMe_aRB10")
-      
-      const body = request.body;
-      const placeId = body.placeId
-      const startDateList = body.startDateList
-      const endDateList = body.startDateList
-      const filters = body.filters
-      
-      const profiles = await searchHomesNow(placeId, startDateList, endDateList, filters);
-      response.send(profiles);
-    }
-    catch (ex) {
-        console.log('Error!!!' + ex);         
-        response.send({});
-      }
-  })();
-});
-
 export const autoComplete = functions.https.onRequest((request, response) => {
   (async () => {
     try {
       let body = request.body;
-      let results: [] = await handleAutoComplete(body.sessionId, body.place,!SEARCH_ONLY_CITIES);
+      let results: [] = await handleAutoComplete(body.sessionId, body.place);
 
       response.send(results);
     }
@@ -151,17 +88,3 @@ exports.review = functions.https.onRequest((request, response) => {
       }
   })();
 });
-
-
-exports.updateUser = functions.firestore.document('production/{id}').onWrite(async (change, context) => {
-      const myAdmin = require('firebase-admin');
-      const db = myAdmin.firestore();
-      const before = change.before.data();
-      const after = change.after.data();
-      //await db.collection('production').doc('production').collection('reviews').doc();
-  
-
-      await db.collection('testfs').add({'asaf444': '666'})
-      // ... Your code here
-      console.log('insideeeeee'); 
-    });

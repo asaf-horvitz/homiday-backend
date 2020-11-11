@@ -28,27 +28,28 @@ export async function getLocationFromPlaceId(placeId: string) {
   }
   
   function FormatString(str: string, ...val: string[]) {
+    let retStr = str;
     for (let index = 0; index < val.length; index++) {
-      str = str.replace(`{${index}}`, val[index]);
+      retStr = retStr.replace(`{${index}}`, val[index]);
     }
-    return str;
+    return retStr;
   }
   
-  export async function handleAutoComplete(sessionId : string, word: string,searchCitiesOnly: boolean)  {
+  export async function handleAutoComplete(sessionId : string, word: string)  {
     let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?&input="{0}"&key={1}&sessiontoken={2}';
     url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId));
   
     '&types=(regions)'
     console.log('before');
     const res = await axios.post(url);
-    let results: any = [];
-    if (res.status == 200) {
+    const results: any = [];
+    if (res.status === 200) {
       console.log(res.data);
       if (Object.keys(res).includes('data') && Object.keys(res.data).includes('predictions')) {
         const presictions: JSON[] = Array.of(res.data.predictions)[0];
         console.log(presictions.length);
   
-        for (let i = 0; i < presictions.length; i++) {
+        for (let i of presictions.length) {
           console.log(presictions[i])
           results.push({placeId: presictions[i]['place_id'], mainText: presictions[i]['structured_formatting']['main_text']
           , secondaryText: presictions[i]['structured_formatting']['secondary_text']});
