@@ -1,5 +1,6 @@
 {
   "projects": {
-    "production": "home-263917"
+    "production": "home-263917",
+    "default": "home-263917"
   }
 }

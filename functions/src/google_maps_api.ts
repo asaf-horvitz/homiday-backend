@@ -7,7 +7,7 @@ export async function getLocationFromPlaceId(placeId: string) {
     try {
       const res = await axios.post(url);
       console.log('response....')
-      let location: {} = {};
+      const location: {} = {};
       location['lat'] = res.data.results[0].geometry.location.lat;
       location['lon'] = res.data.results[0].geometry.location.lng;
       location['northeastLat'] = (res.data.results[0].geometry.viewport.northeast.lat)
@@ -15,7 +15,7 @@ export async function getLocationFromPlaceId(placeId: string) {
       location['southwestLat'] = (res.data.results[0].geometry.viewport.southwest.lat)
       location['southwestLon'] = (res.data.results[0].geometry.viewport.southwest.lng)
       location['regions'] = {}
-      for (var item of res.data.results[0].address_components) {
+      for (const item of res.data.results[0].address_components) {
         location['regions'][item.types[0]] = item.short_name;
       }
 

@@ -1,4 +1,4 @@
-import {IMAGES_BUCKET_NAME,LOW_RES_IMAGES_BUCKET_NAME,storageRef, db } from './firebase';
+import {storageRef  } from './firebase';
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -6,7 +6,7 @@ const fs = require('fs');
 
 export async function downloadFileFromStorage(storageFileName : string, bucketName: string): Promise<string> {
     try {
-      var bucket = storageRef.bucket(bucketName);
+      const bucket = storageRef.bucket(bucketName);
       const tempFilePath : string = path.join(os.tmpdir(), storageFileName);  
       await bucket.file(storageFileName).download({destination: tempFilePath});
       return tempFilePath;
@@ -20,10 +20,10 @@ export async function downloadFileFromStorage(storageFileName : string, bucketNa
   // todo - note tested
   export async function getdownloadedFilesUrl(filesNames : Set<string>, bucketName: string): Promise<Set<string>> {
     try {
-      var bucket = storageRef.bucket(bucketName);
+      const bucket = storageRef.bucket(bucketName);
       const downloadUrlFiles : Set<string> = new Set()
-      for (let fileName in filesNames) {
-        let downloadUrl = await bucket.file(fileName).getDownloadURL()
+      for (const fileName in filesNames) {
+        const downloadUrl = await bucket.file(fileName).getDownloadURL()
         downloadUrlFiles.add(downloadUrl);
       }
       return downloadUrlFiles;
@@ -38,7 +38,7 @@ export async function downloadFileFromStorage(storageFileName : string, bucketNa
     const tempFilePath : string = path.join(os.tmpdir(), storageFileName);
     fs.open(tempFilePath, 'w', function(err, fd) {
       if (err) {
-          throw 'could not open file: ' + err;
+          throw('could not open file: ');
       }
   
       // write the contents of the buffer, from position 0 to the end, to the file descriptor returned in opening our file

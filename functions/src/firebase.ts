@@ -15,7 +15,7 @@ else {
 
 export const db = admin.firestore();
 
-export var storageRef = admin.storage();
+export let storageRef = admin.storage();
 
 export const IMAGES_BUCKET_NAME = "homiday-images"
 export const LOW_RES_IMAGES_BUCKET_NAME = "homiday-low-res-images"
