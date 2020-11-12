@@ -35,6 +35,14 @@ export const autoComplete = functions.https.onRequest(async (request, response) 
 
 export const test = functions.https.onRequest(async (request, response) => {
     try {
+      const myAdmin = require('firebase-admin');
+      const db = myAdmin.firestore();
+      const doc = await db.collection('production').doc('production').collection('reviews').doc('3').get();
+      if (doc.exists) {
+        const reviews = doc.data();
+        console.log(reviews)
+    }
+
       response.send('ok');
       console.log('OK');         
     }
@@ -49,22 +57,22 @@ exports.writeReviewOnExchange = functions.https.onRequest(async (request, respon
       const body = request.body;
       // todo - make sure this users id are valid !!!
       const userIdToReview = body.userIdToReview; 
-      const docId = body.docId;
+      const reviewerId = body.reviewerId
 
       const myAdmin = require('firebase-admin');
       const db = myAdmin.firestore();
-      const doc = await db.collection('production').doc('production').collection('reviews').doc(docId).get();
+      const doc = await db.collection('production').doc('production').collection('reviews').doc(userIdToReview).get();
       let reviews = {};
       if (doc.exists) {
-          reviews = doc.data();
+          reviews = doc.data().reviews;
       }
-
-      reviews[userIdToReview] = request.body;
+      
+      reviews[reviewerId] = request.body;
 
       let totalReviewScore = 0;
       let totalReviews = 0;
-      for (const review  in reviews ) {
-        const currentGrades : number[] = reviews[review]['grades'] as number[];
+      for (const reviewer  in reviews ) {
+        const currentGrades : number[] = reviews[reviewer]['grades'] as number[];
         for (const grade of currentGrades) {
               totalReviewScore += grade;
           }
