@@ -1,7 +1,11 @@
 'use strict';
 
+
 import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
+
+// in order for the initialization in firebase to be called
+myFirebase.init()
 
 import {getLocationFromPlaceId, handleAutoComplete} from './google_maps_api';
 //import { admin } from 'firebase-admin/lib/credential';
