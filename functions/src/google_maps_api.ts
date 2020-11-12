@@ -49,7 +49,7 @@ export async function getLocationFromPlaceId(placeId: string) {
         const presictions: JSON[] = Array.of(res.data.predictions)[0];
         console.log(presictions.length);
   
-        for (let i of presictions.length) {
+        for (let i = 0; i < presictions.length; i++) {
           console.log(presictions[i])
           results.push({placeId: presictions[i]['place_id'], mainText: presictions[i]['structured_formatting']['main_text']
           , secondaryText: presictions[i]['structured_formatting']['secondary_text']});
