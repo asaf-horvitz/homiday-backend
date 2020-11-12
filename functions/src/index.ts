@@ -3,6 +3,7 @@
 
 import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
+import {setReview} from './review';
 
 // in order for the initialization in firebase to be called
 myFirebase.init()
@@ -54,36 +55,7 @@ export const test = functions.https.onRequest(async (request, response) => {
 
 exports.writeReviewOnExchange = functions.https.onRequest(async (request, response) => {
     try {
-      const body = request.body;
-      // todo - make sure this users id are valid !!!
-      const userIdToReview = body.userIdToReview; 
-      const reviewerId = body.reviewerId
-
-      const myAdmin = require('firebase-admin');
-      const db = myAdmin.firestore();
-      const doc = await db.collection('production').doc('production').collection('reviews').doc(userIdToReview).get();
-      let reviews = {};
-      if (doc.exists) {
-          reviews = doc.data().reviews;
-      }
-      
-      reviews[reviewerId] = request.body;
-
-      let totalReviewScore = 0;
-      let totalReviews = 0;
-      for (const reviewer  in reviews ) {
-        const currentGrades : number[] = reviews[reviewer]['grades'] as number[];
-        for (const grade of currentGrades) {
-              totalReviewScore += grade;
-          }
-          totalReviews++;
-      }
-      totalReviewScore = (totalReviewScore / 4) / totalReviews;
-      await db.collection('production').doc('production').collection('reviews').doc(userIdToReview).set({
-          'totalReviewScore' : totalReviewScore,
-          'totalReviews' : totalReviews,
-          'reviews' : reviews
-      });
+      await setReview(request);
       response.send('done');
     }
     catch (ex) {

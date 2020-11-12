@@ -1,0 +1,84 @@
+
+const REVIEWS_I_MADE = 'reviewsIMade';
+const REVIEWS_ON_ME = 'reviewsOnMe';
+const GRADES = 'grades';
+const TOTAL_REVIEW_SCORE = 'totalReviewScore'
+const TOTAL_REVIEWS = 'totalReviews'
+
+
+export async function setReview(request) {
+    await writeRevieInsideReviewerDoc(request)
+    await writeRevieInsideMyDetails(request)
+}
+
+function getDocPathInCollection(docId) {
+    const myAdmin = require('firebase-admin');
+    const db = myAdmin.firestore();
+    return db.collection('production').doc('production').collection('reviews').doc(docId);
+}
+
+async function writeRevieInsideMyDetails(request) {
+    const body = request.body;
+
+    // todo - make sure this users id are valid !!!
+    const userIdToReview = body.userIdToReview; 
+    const reviewerId = body.reviewerId
+
+    const doc = await getDocPathInCollection(reviewerId).get();
+    let reviewsIMade = {};
+    let fileExists = false;
+    if (doc.exists) {
+        reviewsIMade = doc.data()[REVIEWS_I_MADE];
+        fileExists = true;
+    }
+    
+    reviewsIMade[userIdToReview] = request.body;
+    
+    const map = {}
+    map[REVIEWS_I_MADE] = reviewsIMade
+    if (fileExists) {
+        await getDocPathInCollection(reviewerId).update(map);     
+    }
+    else {
+        map[REVIEWS_ON_ME] = {}
+        await getDocPathInCollection(reviewerId).set(map);     
+    }
+}
+async function writeRevieInsideReviewerDoc(request) {
+    const body = request.body;
+    // todo - make sure this users id are valid !!!
+    const userIdToReview = body.userIdToReview; 
+    const reviewerId = body.reviewerId
+
+    const doc = await getDocPathInCollection(userIdToReview).get();
+    let reviewsOnMe = {};
+    let fileExists = false;
+    if (doc.exists) {
+        reviewsOnMe = doc.data().reviewsOnMe;
+        fileExists = true;        
+    }
+    
+    reviewsOnMe[reviewerId] = request.body;
+
+    let totalReviewScore = 0;
+    let totalReviews = 0;
+    for (const reviewer in reviewsOnMe ) {
+        const currentGrades : number[] = reviewsOnMe[reviewer][GRADES] as number[];
+        for (const grade of currentGrades) {
+            totalReviewScore += grade;
+        }
+        totalReviews++;
+    }
+    totalReviewScore = (totalReviewScore / 4) / totalReviews;
+    const map = {}
+    map[TOTAL_REVIEW_SCORE] = totalReviewScore
+    map[TOTAL_REVIEWS] = totalReviews
+    map[REVIEWS_ON_ME] = reviewsOnMe
+    if (fileExists) {
+        await getDocPathInCollection(userIdToReview).update(map)
+    }
+    else {
+        map[REVIEWS_I_MADE] = {}
+        await getDocPathInCollection(userIdToReview).set(map)
+    }
+}
