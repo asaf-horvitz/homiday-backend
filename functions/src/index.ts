@@ -3,7 +3,7 @@
 
 import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
-import {setReview} from './review';
+import {setReview, updatePublicProfileDocWithReview} from './review';
 
 // in order for the initialization in firebase to be called
 myFirebase.init()
@@ -62,4 +62,17 @@ exports.writeReviewOnExchange = functions.https.onRequest(async (request, respon
       console.log(ex);         
       response.status(500).send(ex);
   }
-});
+})
+
+// update review in public profile each time user updates the profile
+exports.updateProfile = functions.firestore
+  .document('production/production/public-profile/{userIDGuid}')
+    .onWrite(async (change, context) => {
+  try {
+    const userId = change.after.data().userId;
+    await updatePublicProfileDocWithReview(userId)
+  }
+  catch (ex) {
+    console.log(ex);         
+  }
+})
