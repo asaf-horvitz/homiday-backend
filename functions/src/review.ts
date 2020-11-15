@@ -49,21 +49,17 @@ async function writeRevieInsideMyDetails(request) {
     }
 }
 
-async function updateReviewInProfileWhenProfileCchanges(userId) {
-    await updatePublicProfileDocWithReview(userId)
-}
-
 export async function updatePublicProfileDocWithReview(userId) {
     const myAdmin = require('firebase-admin');
     const db = myAdmin.firestore();
     const querySnapshot  = await db.collection('production').doc('production').collection('public-profile').where('userId', '==', userId).get();
     querySnapshot.forEach(async (doc) => {
-        let docId = doc.id;
+        const docId = doc.id;
 
         const userReviewDetailsDoc = await db.collection('production').doc('production').collection('reviews').doc(userId).get();
         if (!userReviewDetailsDoc.exists)
         return;
-        let profile = doc.data();
+        const profile = doc.data();
         profile['userReviewDetails'] = userReviewDetailsDoc.data();
         await db.collection('production').doc('production').collection('public-profile').doc(docId).set(profile);
       });
