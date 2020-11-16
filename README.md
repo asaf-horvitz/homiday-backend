@@ -1,3 +1,14 @@
+usefull commands
+
+firebase emulators:start --inspect-functions 
+firebase deploy --only functions
+
+
+
+
+
+
+
 ## Cloud Functions for Firebase: getting started with TypeScript
 
 This is an example Firebase project for using
