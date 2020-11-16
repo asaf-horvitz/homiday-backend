@@ -52,7 +52,7 @@ async function writeRevieInsideMyDetails(request) {
 export async function updatePublicProfileDocWithReview(userId) {
     const myAdmin = require('firebase-admin');
     const db = myAdmin.firestore();
-    const querySnapshot  = await db.collection('production').doc('production').collection('public-profile').where('userId', '==', userId).get();
+    const querySnapshot  = await db.collection('production').doc('production').collection('public-profiles').where('userId', '==', userId).get();
     querySnapshot.forEach(async (doc) => {
         const docId = doc.id;
 
@@ -61,7 +61,7 @@ export async function updatePublicProfileDocWithReview(userId) {
         return;
         const profile = doc.data();
         profile['userReviewDetails'] = userReviewDetailsDoc.data();
-        await db.collection('production').doc('production').collection('public-profile').doc(docId).set(profile);
+        await db.collection('production').doc('production').collection('public-profiles').doc(docId).set(profile);
       });
 }
 

@@ -66,7 +66,7 @@ exports.writeReviewOnExchange = functions.https.onRequest(async (request, respon
 
 // update review in public profile each time user updates the profile
 exports.updateProfile = functions.firestore
-  .document('production/production/public-profile/{userIDGuid}')
+  .document('production/production/public-profiles/{userIDGuid}')
     .onWrite(async (change, context) => {
   try {
     const userId = change.after.data().userId;
