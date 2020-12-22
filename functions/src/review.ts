@@ -1,5 +1,4 @@
 
-import { Timestamp } from '@google-cloud/firestore';
 import { sendTheNotification } from './notification';
 
 const myAdmin = require('firebase-admin');
@@ -127,8 +126,10 @@ export async function sendReviewNotification() {
 }
 
 async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeDocId : String) : Promise<boolean> {
-    const endExchangeDate : Timestamp = json['endExchange']
-    if (endExchangeDate.seconds + (24*60*60) > Timestamp.now().seconds) return false;
+    const endExchangeDate = json['endExchange']
+
+    const currSeconds = (new Date(Date.now())).getTime() / 1000;
+    if (endExchangeDate.seconds + (24*60*60) > currSeconds) return false;
     
     let userId = json['to']
     if (from)
@@ -146,7 +147,7 @@ async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeD
         notificationTime = FROM_REVIEW_SENT_NOTIFICATION_TIME
         reviewFilled = FROM_REVIEW_FILLED
     }
-    json[notificationTime] = Timestamp.now()
+    json[notificationTime] = currSeconds
     json[reviewFilled] = true
     await myAdmin.firestore().doc(`production/production/msgs/msgs/exchange-msgs/${exchangeDocId}`).set(json);
     console.log('notification sent')

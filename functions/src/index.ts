@@ -83,9 +83,7 @@ exports.updateProfile = functions.firestore
 
 
 export const sendNotificationToFCMToken2 = functions.firestore.document('production/production/msgs/msgs/exchange-msgs/{mUid}').onWrite(async (change, context) => {
-  try{
-    const admin = require('firebase-admin');
-    
+  try{    
     const to = change.after.get('to');
     const from = change.after.get('from');
     console.log(change.after.data() );
