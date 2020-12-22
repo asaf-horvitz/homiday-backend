@@ -113,15 +113,14 @@ const FROM_REVIEW_SENT_NOTIFICATION_TIME = 'fromReviewSentNotificationTime'
 const TO_REVIEW_SENT_NOTIFICATION_TIME = 'toReviewSentNotificationTime'
 export async function sendReviewNotification() {
     console.log('inside')
-    
-    
+        
     const db = myAdmin.firestore();
     const querySnapshot  = await db.collection('production/production/msgs/msgs/exchange-msgs').get();
     
     querySnapshot.forEach(async (doc) => {
         const json = doc.data()
-        if (json[FROM_REVIEW_FILLED] !== true) await sendNotificationToSingleUser(true, json, doc.id);
-        if (json[TO_REVIEW_FILLED] !== true) await sendNotificationToSingleUser(false, json, doc.id);
+        await sendNotificationToSingleUser(true, json, doc.id);
+        await sendNotificationToSingleUser(false, json, doc.id);
     });
 }
 
@@ -129,28 +128,42 @@ async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeD
     const endExchangeDate = json['endExchange']
 
     const currSeconds = (new Date(Date.now())).getTime() / 1000;
-    if (endExchangeDate.seconds + (24*60*60) > currSeconds) return false;
-    
-    let userId = json['to']
-    if (from)
-        userId = json['from']
+    if (endExchangeDate.seconds + (24*60*60) > currSeconds) 
+        return false
 
-    console.log('send review notification to ' + userId);
+    if (json[getReviewFilledFieldName(from)] !== undefined) 
+        return false
+    if (json[getNotificationTimeFieldName(from)] !== undefined) 
+        return false
 
+    console.log('send review notification to ' + json[getUserIdFieldName(from)]);
+
+    await sendNotificationOperation(json[getUserIdFieldName(from)]);
+
+    let notificationTime = getNotificationTimeFieldName(from)
+    await myAdmin.firestore().doc(`production/production/msgs/msgs/exchange-msgs/${exchangeDocId}`).update({notificationTime : currSeconds});
+    console.log('notification sent')    
+
+    return true;
+}
+
+async function sendNotificationOperation(userId: String, ) {
     const title = 'איך הייתה ההחלפה שלכם ?';
     const content = 'הכנסו לאפליקציה ומלאו חוות דעת'
     await sendTheNotification(userId, title, content);
+}
 
-    let notificationTime = TO_REVIEW_SENT_NOTIFICATION_TIME
-    let reviewFilled = TO_REVIEW_FILLED
-    if (from) {
-        notificationTime = FROM_REVIEW_SENT_NOTIFICATION_TIME
-        reviewFilled = FROM_REVIEW_FILLED
-    }
-    json[notificationTime] = currSeconds
-    json[reviewFilled] = true
-    await myAdmin.firestore().doc(`production/production/msgs/msgs/exchange-msgs/${exchangeDocId}`).set(json);
-    console.log('notification sent')
+function getNotificationTimeFieldName(from : boolean) : string{
+    if (from) return FROM_REVIEW_SENT_NOTIFICATION_TIME;
+    return TO_REVIEW_SENT_NOTIFICATION_TIME
+}
 
-    return true;
+function getReviewFilledFieldName(from : boolean) : string{
+    if (from) return FROM_REVIEW_FILLED;
+    return TO_REVIEW_FILLED
+}
+
+function getUserIdFieldName(from: boolean) : string{
+    if (from) return 'from';
+    return 'to'
 }
