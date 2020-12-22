@@ -3,7 +3,8 @@
 
 import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
-import {setReview, updatePublicProfileDocWithReview} from './review';
+import {setReview, updatePublicProfileDocWithReview, sendReviewNotification} from './review';
+import {sendTheNotification} from './notification';
 
 // in order for the initialization in firebase to be called
 myFirebase.init()
@@ -36,14 +37,17 @@ export const autoComplete = functions.https.onRequest(async (request, response) 
 
 export const test = functions.https.onRequest(async (request, response) => {
     try {
+      /*
       const myAdmin = require('firebase-admin');
       const db = myAdmin.firestore();
       const doc = await db.collection('production').doc('production').collection('reviews').doc('3').get();
       if (doc.exists) {
         const reviews = doc.data();
         console.log(reviews)
-    }
 
+    }
+    */
+      await sendReviewNotification();
       response.send('ok');
       console.log('OK');         
     }
@@ -89,42 +93,34 @@ export const sendNotificationToFCMToken2 = functions.firestore.document('product
     console.log('to : ' + to );
     console.log('mUid : ' + context.params.mUid);
     
-    var title = 'msg from ' + from;
-    var content ='Exchange msg';
+    const title = 'msg from ' + from;
+    let content ='Exchange msg';
 
     const confirm = change.after.get('confirm');
     const canceled = change.after.get('canceled');
 
-    if (confirm == 'true'){
+    if (confirm === 'true'){
       console.log('conifirm : True');
       content = 'Exchange msg Confirm! ';
     }
 
-    if (canceled == 'true'){
+    if (canceled === 'true'){
       console.log('Canceled : True');
       content = 'Exchange msg Canceled! ';
     }
     
-    let userDoc = await admin.firestore().doc(`production/production/notification-tokens/${to}`).get();
-    let fcmToken = userDoc.get('token');
-    console.log('fcm : ' + fcmToken);
-    var message = {
-        notification: {
-            title: title,
-            body: content,
-        },
-        data: {
-          click_action: 'FLUTTER_NOTIFICATION_CLICK',
-        },
-        token: fcmToken,
-
-    }
-
-    let response = await admin.messaging().send(message);
-    console.log(response);
-
-}
-catch (ex) {
+    await sendTheNotification(to, title, content)
+  }
+  catch (ex) {
     console.log(ex);         
   }
 });
+
+exports.sendReviewNotification = functions.pubsub.schedule('0 20 * * *')
+  .timeZone('Asia/Jerusalem') // Users can choose timezone - default is America/Los_Angeles
+  .onRun(async (context) => {
+    await sendReviewNotification();
+  return null;
+});
+
+
