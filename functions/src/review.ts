@@ -9,20 +9,31 @@ const GRADES = 'grades';
 const TOTAL_REVIEW_SCORE = 'totalReviewScore'
 const TOTAL_REVIEWS = 'totalReviews'
 
+const db = myAdmin.firestore();
 
+
+const FROM_REVIEW_FILLED = 'fromReviewFilled'
+const TO_REVIEW_FILLED = 'toReviewFilled'
+const FROM_REVIEW_SENT_NOTIFICATION_TIME = 'fromReviewSentNotificationTime'
+const TO_REVIEW_SENT_NOTIFICATION_TIME = 'toReviewSentNotificationTime'
 
 export async function setReview(request) {
-    await writeRevieInsideReviewerDoc(request)
-    await writeRevieInsideMyDetails(request)
     const userIdToReview = request.body.userIdToReview; 
     const reviewerId = request.body.reviewerId
+    const exchangeDocId = request.body.exchangeDocId
+    let success : boolean = await setReviewFilledInExchangeMsg(exchangeDocId, reviewerId, userIdToReview)
+    if (!success) return
+
+    // todo check user is same and has confirmed exchange request
+    await writeRevieInsideReviewerDoc(request)
+    await writeRevieInsideMyDetails(request)
     await updatePublicProfileDocWithReview(userIdToReview)
     await updatePublicProfileDocWithReview(reviewerId)
 }
 
 function getDocPathInCollection(docId) {
     const db = myAdmin.firestore();
-    return db.collection('production').doc('production').collection('reviews').doc(docId);
+    return db.doc('production/production/reviews/' + docId);
 }
 
 async function writeRevieInsideMyDetails(request) {
@@ -49,22 +60,45 @@ async function writeRevieInsideMyDetails(request) {
     }
     else {
         map[REVIEWS_ON_ME] = {}
-        await getDocPathInCollection(reviewerId).set(map);     
+        await getDocPathInCollection(reviewerId).set(map);
     }
 }
 
+async function setReviewFilledInExchangeMsg(exchangeDocId : String, reviewerId : String, userIdToReview : String) : Promise<boolean> {
+    const exchangeDoc  = await db.doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).get();
+    
+    if (!exchangeDoc.exists)
+        return false;
+    
+    const json = exchangeDoc.data();
+    if (json['status'] !== 'enumMsgStatus.confirmed') return false
+    
+    let filledFieldName;
+    if (json['from'] == reviewerId) {
+        filledFieldName = FROM_REVIEW_FILLED
+    }
+    else if (json['to'] == reviewerId) {
+        filledFieldName = TO_REVIEW_FILLED
+    }
+    else 
+        return false
+
+    db.doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).update({filledFieldName: true});
+    return true;
+
+}
+
 export async function updatePublicProfileDocWithReview(userId) {
-    const db = myAdmin.firestore();
-    const querySnapshot  = await db.collection('production').doc('production').collection('public-profiles').where('userId', '==', userId).get();
+    const querySnapshot  = await db.collection('production/production/public-profiles').where('userId', '==', userId).get();
     querySnapshot.forEach(async (doc) => {
         const docId = doc.id;
 
-        const userReviewDetailsDoc = await db.collection('production').doc('production').collection('reviews').doc(userId).get();
+        const userReviewDetailsDoc = await db.doc('production/production/reviews/' + userId).get();
         if (!userReviewDetailsDoc.exists)
         return;
         const profile = doc.data();
         profile['userReviewDetails'] = userReviewDetailsDoc.data();
-        await db.collection('production').doc('production').collection('public-profiles').doc(docId).set(profile);
+        await db.doc('production/production/public-profiles/' + docId).set(profile);
       });
 }
 
@@ -107,10 +141,6 @@ async function writeRevieInsideReviewerDoc(request) {
     }
 }
 
-const FROM_REVIEW_FILLED = 'fromReviewFilled'
-const TO_REVIEW_FILLED = 'toReviewFilled'
-const FROM_REVIEW_SENT_NOTIFICATION_TIME = 'fromReviewSentNotificationTime'
-const TO_REVIEW_SENT_NOTIFICATION_TIME = 'toReviewSentNotificationTime'
 export async function sendReviewNotification() {
     console.log('inside')
         
