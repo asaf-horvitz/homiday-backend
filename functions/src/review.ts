@@ -21,7 +21,13 @@ export async function setReview(request) {
     const userIdToReview = request.body.userIdToReview; 
     const reviewerId = request.body.reviewerId
     const exchangeDocId = request.body.exchangeDocId
-    let success : boolean = await setReviewFilledInExchangeMsg(exchangeDocId, reviewerId, userIdToReview)
+    request.body['msgTime'] = myAdmin.firestore.Timestamp.now()
+    let date : Date = new Date(request.body['startExchange'])  
+    request.body['startExchange'] = myAdmin.firestore.Timestamp.fromDate(date)
+    date = new Date(request.body['endExchange'])  
+    request.body['endExchange'] = myAdmin.firestore.Timestamp.fromDate(date)
+
+    const success : boolean = await setReviewFilledInExchangeMsg(exchangeDocId, reviewerId, userIdToReview)
     if (!success) return
 
     // todo check user is same and has confirmed exchange request
@@ -32,7 +38,6 @@ export async function setReview(request) {
 }
 
 function getDocPathInCollection(docId) {
-    const db = myAdmin.firestore();
     return db.doc('production/production/reviews/' + docId);
 }
 
@@ -65,25 +70,29 @@ async function writeRevieInsideMyDetails(request) {
 }
 
 async function setReviewFilledInExchangeMsg(exchangeDocId : String, reviewerId : String, userIdToReview : String) : Promise<boolean> {
+    console.log('setReviewFilledInExchangeMsg 1')
     const exchangeDoc  = await db.doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).get();
     
+    console.log('setReviewFilledInExchangeMsg 2')
     if (!exchangeDoc.exists)
         return false;
     
+        console.log('setReviewFilledInExchangeMsg 3')
     const json = exchangeDoc.data();
     if (json['status'] !== 'enumMsgStatus.confirmed') return false
-    
-    let filledFieldName;
-    if (json['from'] == reviewerId) {
-        filledFieldName = FROM_REVIEW_FILLED
+
+    let map = {}
+    if (json['from'] === reviewerId) {
+        map[FROM_REVIEW_FILLED] = true
     }
-    else if (json['to'] == reviewerId) {
-        filledFieldName = TO_REVIEW_FILLED
+    else if (json['to'] === reviewerId) {
+        map[TO_REVIEW_FILLED] = true
     }
     else 
         return false
 
-    db.doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).update({filledFieldName: true});
+    db.doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).update(map);
+    console.log('updating exchange msg ' + exchangeDocId)
     return true;
 
 }
@@ -95,7 +104,7 @@ export async function updatePublicProfileDocWithReview(userId) {
 
         const userReviewDetailsDoc = await db.doc('production/production/reviews/' + userId).get();
         if (!userReviewDetailsDoc.exists)
-        return;
+            return;
         const profile = doc.data();
         profile['userReviewDetails'] = userReviewDetailsDoc.data();
         await db.doc('production/production/public-profiles/' + docId).set(profile);
@@ -119,7 +128,7 @@ async function writeRevieInsideReviewerDoc(request) {
     reviewsOnMe[reviewerId] = request.body;
 
     let totalReviewScore = 0;
-    let totalReviews = 0;
+    let totalReviews = 0;    
     for (const reviewer in reviewsOnMe ) {
         const currentGrades : number[] = reviewsOnMe[reviewer][GRADES] as number[];
         for (const grade of currentGrades) {
@@ -144,7 +153,6 @@ async function writeRevieInsideReviewerDoc(request) {
 export async function sendReviewNotification() {
     console.log('inside')
         
-    const db = myAdmin.firestore();
     const querySnapshot  = await db.collection('production/production/msgs/msgs/exchange-msgs').get();
     
     querySnapshot.forEach(async (doc) => {
@@ -161,18 +169,20 @@ async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeD
     if (endExchangeDate.seconds + (24*60*60) > currSeconds) 
         return false
 
-    if (json[getReviewFilledFieldName(from)] !== undefined) 
+    if (json[getReviewFilledFieldName(from)] === true) 
         return false
-    if (json[getNotificationTimeFieldName(from)] !== undefined) 
+    if (json[getNotificationTimeFieldName(from)] === true) 
         return false
 
     console.log('send review notification to ' + json[getUserIdFieldName(from)]);
 
     await sendNotificationOperation(json[getUserIdFieldName(from)]);
 
-    let notificationTime = getNotificationTimeFieldName(from)
-    await myAdmin.firestore().doc(`production/production/msgs/msgs/exchange-msgs/${exchangeDocId}`).update({notificationTime : currSeconds});
-    console.log('notification sent')    
+    const map = {}
+    map[getNotificationTimeFieldName(from)] = myAdmin.firestore.Timestamp.now()
+
+    await myAdmin.firestore().doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).update(map);
+    console.log('notification sent for exchange doc ' + exchangeDocId)    
 
     return true;
 }
