@@ -4,7 +4,7 @@
 import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
 import {setReview, updatePublicProfileDocWithReview, sendReviewNotification} from './review';
-import {sendTheNotification} from './notification';
+import {sendNotificationAfterExchangeRequestUpdated} from './notification';
 
 // in order for the initialization in firebase to be called
 myFirebase.init()
@@ -83,35 +83,7 @@ exports.updateProfile = functions.firestore
 
 
 export const sendNotificationToFCMToken2 = functions.firestore.document('production/production/msgs/msgs/exchange-msgs/{mUid}').onWrite(async (change, context) => {
-  try{    
-    const to = change.after.get('to');
-    const from = change.after.get('from');
-    console.log(change.after.data() );
-    console.log('from : ' + from );
-    console.log('to : ' + to );
-    console.log('mUid : ' + context.params.mUid);
-    
-    const title = 'msg from ' + from;
-    let content ='Exchange msg';
-
-    const confirm = change.after.get('confirm');
-    const canceled = change.after.get('canceled');
-
-    if (confirm === 'true'){
-      console.log('conifirm : True');
-      content = 'Exchange msg Confirm! ';
-    }
-
-    if (canceled === 'true'){
-      console.log('Canceled : True');
-      content = 'Exchange msg Canceled! ';
-    }
-    
-    await sendTheNotification(to, title, content)
-  }
-  catch (ex) {
-    console.log(ex);         
-  }
+  await sendNotificationAfterExchangeRequestUpdated(change, context);
 });
 
 exports.sendReviewNotification = functions.pubsub.schedule('0 20 * * *')

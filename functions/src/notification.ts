@@ -17,3 +17,36 @@ export async function sendTheNotification(userId : String, title: String, conten
     const response = await myAdmin.messaging().send(message);
     console.log(response)
 }
+
+export async function sendNotificationAfterExchangeRequestUpdated(change, context) {
+    try{    
+        const to = change.after.get('to');
+        const from = change.after.get('from');
+        console.log(change.after.data() );
+        console.log('from : ' + from );
+        console.log('to : ' + to );
+        console.log('mUid : ' + context.params.mUid);
+        
+        const title = 'msg from ' + from;
+        let content ='Exchange msg';
+
+        const confirm = change.after.get('confirm');
+        const canceled = change.after.get('canceled');
+
+        if (confirm === 'true'){
+        console.log('conifirm : True');
+        content = 'Exchange msg Confirm! ';
+        }
+
+        if (canceled === 'true'){
+        console.log('Canceled : True');
+        content = 'Exchange msg Canceled! ';
+        }
+        
+        await sendTheNotification(to, title, content)
+    }
+    catch (ex) {
+    console.log(ex);         
+    }
+
+}
