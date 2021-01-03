@@ -5,11 +5,13 @@ import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
 import {setReview, updatePublicProfileDocWithReview, sendReviewNotification} from './review';
 import {sendNotificationAfterExchangeRequestUpdated} from './notification';
+import {createMoneyDoc} from './money'
 
 // in order for the initialization in firebase to be called
 myFirebase.init()
 
 import {getLocationFromPlaceId, handleAutoComplete} from './google_maps_api';
+import { print } from 'util';
 //import { admin } from 'firebase-admin/lib/credential';
 
 export const getLocationDetailsFromPlaceId = functions.https.onRequest(async (request, response) => {
@@ -91,6 +93,12 @@ exports.sendReviewNotification = functions.pubsub.schedule('0 20 * * *')
   .onRun(async (context) => {
     await sendReviewNotification();
   return null;
+});
+
+
+export const privateProfileUpdated = functions.firestore.document('production/production/private-profiles/{guid}').onWrite(async (change, context) => {
+  console.log('privateProfileUpdated')
+  await createMoneyDoc(change);
 });
 
 
