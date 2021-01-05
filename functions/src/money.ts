@@ -12,8 +12,15 @@ export async function createMoneyDoc(change) {
     const adults = change.after.get('adults');
     if (adults == undefined) return;
     if (adults <= 0) return;
+    await createMoneyDocInDB(userId)
+}
+
+export async function payForExchange() {
+    //await createMoneyDoc()
+}
+
+async function createMoneyDocInDB(userId) {
     const doc = await getDocPathInCollection(userId).get();
-    let reviewsIMade = {};
     if (doc.exists) return;
     await getDocPathInCollection(userId).set(moneyDocInitialJson());   
 }

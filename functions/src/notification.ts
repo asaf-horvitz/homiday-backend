@@ -1,4 +1,3 @@
-
 const myAdmin = require('firebase-admin');
 
 export async function sendTheNotification(userId : String, title: String, content: string) {
@@ -22,10 +21,11 @@ export async function sendNotificationAfterExchangeRequestUpdated(change, contex
     try{    
         const to = change.after.get('to');
         const from = change.after.get('from');
+        const status = change.after.get('status');
+
+        if (status == 'enumMsgStatus.confirmed') 
+
         console.log(change.after.data() );
-        console.log('from : ' + from );
-        console.log('to : ' + to );
-        console.log('mUid : ' + context.params.mUid);
         
         const title = 'msg from ' + from;
         let content ='Exchange msg';
