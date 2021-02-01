@@ -1,5 +1,5 @@
-
 const myAdmin = require('firebase-admin');
+import {ExchangeMsg} from './exchange_msgs'
 
 export async function sendTheNotification(userId : String, title: String, content: string) {
     const userDoc = await myAdmin.firestore().doc('production/production/notification-tokens/' + userId).get();
@@ -20,30 +20,23 @@ export async function sendTheNotification(userId : String, title: String, conten
 
 export async function sendNotificationAfterExchangeRequestUpdated(change, context) {
     try{    
-        const to = change.after.get('to');
-        const from = change.after.get('from');
+        let exchangeMsg = new ExchangeMsg(change)
+
         console.log(change.after.data() );
-        console.log('from : ' + from );
-        console.log('to : ' + to );
-        console.log('mUid : ' + context.params.mUid);
         
-        const title = 'msg from ' + from;
-        let content ='Exchange msg';
+        const title = 'Exchange message';
 
-        const confirm = change.after.get('confirm');
-        const canceled = change.after.get('canceled');
+        if (exchangeMsg.confirm())
+            await sendTheNotification(exchangeMsg.from(), title, 'Exchange msg confirm')
 
-        if (confirm === 'true'){
-        console.log('conifirm : True');
-        content = 'Exchange msg Confirm! ';
-        }
+        else if (exchangeMsg.cancel()) 
+            await sendTheNotification(exchangeMsg.to(), title, 'Exchange msg canceled')
 
-        if (canceled === 'true'){
-        console.log('Canceled : True');
-        content = 'Exchange msg Canceled! ';
-        }
-        
-        await sendTheNotification(to, title, content)
+        else if (exchangeMsg.decline())
+            await sendTheNotification(exchangeMsg.from(), title, 'Exchange msg decline')
+
+        else if (exchangeMsg.inProgress()) 
+            await sendTheNotification(exchangeMsg.to(), title, 'New exchange request')
     }
     catch (ex) {
     console.log(ex);         
