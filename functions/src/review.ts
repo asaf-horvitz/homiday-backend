@@ -28,13 +28,18 @@ export async function setReview(request) {
     request.body['endExchange'] = myAdmin.firestore.Timestamp.fromDate(date)
 
     const success : boolean = await setReviewFilledInExchangeMsg(exchangeDocId, reviewerId, userIdToReview)
+    console.log('done writing to exchange msg')
     if (!success) return
 
     // todo check user is same and has confirmed exchange request
+    console.log('writing to reviews collection')
     await writeRevieInsideReviewerDoc(request)
     await writeRevieInsideMyDetails(request)
-    await updatePublicProfileDocWithReview(userIdToReview)
-    await updatePublicProfileDocWithReview(reviewerId)
+    console.log('done writing to reviews collection')
+    await updatePublicProfileDocWithReview(userIdToReview, 'public-profiles')
+    await updatePublicProfileDocWithReview(userIdToReview, 'private-profiles')
+    await updatePublicProfileDocWithReview(reviewerId, 'public-profiles')
+    await updatePublicProfileDocWithReview(reviewerId, 'private-profiles')
 }
 
 function getDocPathInCollection(docId) {
@@ -97,19 +102,26 @@ async function setReviewFilledInExchangeMsg(exchangeDocId : String, reviewerId :
 
 }
 
-export async function updatePublicProfileDocWithReview(userId) {
-    const querySnapshot  = await db.collection('production/production/public-profiles').where('userId', '==', userId).get();
+export async function updatePublicProfileDocWithReview(userId, profileCollection) {
+    const collectionName = 'production/production/' + profileCollection    
+    const querySnapshot  = await db.collection(collectionName).where('userId', '==', userId).get();
+    console.log('updating review in profile: ' + collectionName + ', for user ' + userId);
     querySnapshot.forEach(async (doc) => {
         const docId = doc.id;
 
         const userReviewDetailsDoc = await db.doc('production/production/reviews/' + userId).get();
-        if (!userReviewDetailsDoc.exists)
+        if (!userReviewDetailsDoc.exists) {
+            console.log('didnt find review doc for user ' + userId);
             return;
+        }
         const profile = doc.data();
         profile['userReviewDetails'] = userReviewDetailsDoc.data();
-        await db.doc('production/production/public-profiles/' + docId).set(profile);
+        await db.doc(collectionName + '/' + docId).set(profile);
+        console.log('update profile for user ' + userId);
+        return;
       });
-}
+      console.log('**** didnt update profile for user ' + userId);
+    }
 
 async function writeRevieInsideReviewerDoc(request) {
     const body = request.body;

@@ -72,20 +72,6 @@ exports.writeReviewOnExchange = functions.region(REGION).https.onRequest(async (
   }
 })
 
-// update review in public profile each time user updates the profile
-exports.updateProfile = functions.region(REGION).firestore
-  .document('production/production/public-profiles/{userIDGuid}')
-    .onWrite(async (change, context) => {
-  try {
-    const userId = change.after.data().userId;
-    await updatePublicProfileDocWithReview(userId)
-  }
-  catch (ex) {
-    console.log(ex);         
-  }
-})
-
-
 export const sendNotificationToFCMToken2 = functions.region(REGION).firestore.document('production/production/msgs/msgs/exchange-msgs/{mUid}').onWrite(async (change, context) => {
   await sendNotificationAfterExchangeRequestUpdated(change, context);
 });
