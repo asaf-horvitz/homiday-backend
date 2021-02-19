@@ -70,6 +70,7 @@ export const listenToExchangeMsgProduction = functions.region(REGION).firestore.
   await sendNotificationAfterExchangeRequestUpdated(change, context, true);
 });
 
+// todo - need to do it every hour according to the time zone of each profile in the exchange
 exports.sendReviewNotification = functions.region(REGION).pubsub.schedule('0 20 * * *')
   .timeZone('Asia/Jerusalem') // Users can choose timezone - default is America/Los_Angeles
   .onRun(async (context) => {
