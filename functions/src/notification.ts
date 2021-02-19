@@ -25,8 +25,12 @@ export async function sendNotificationAfterExchangeRequestUpdated(change, contex
 
         console.log(change.after.data() );
         
-        const title = 'Exchange message';
+        // todo - translation        
+        const title = 'Exchange update';
+        const msg = 'press to view update'
+        await sendTheNotification(exchangeMsg.from(), title, msg, envProd)
 
+        /*
         if (exchangeMsg.confirm())
             await sendTheNotification(exchangeMsg.from(), title, 'Exchange msg confirm', envProd)
 
@@ -38,6 +42,7 @@ export async function sendNotificationAfterExchangeRequestUpdated(change, contex
 
         else if (exchangeMsg.inProgress()) 
             await sendTheNotification(exchangeMsg.to(), title, 'New exchange request',envProd)
+        */
     }
     catch (ex) {
     console.log(ex);         
