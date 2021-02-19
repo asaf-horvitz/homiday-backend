@@ -41,17 +41,6 @@ export const autoComplete = functions.region(REGION).https.onRequest(async (requ
 
 export const test = functions.region(REGION).https.onRequest(async (request, response) => {
     try {
-      /*
-      const myAdmin = require('firebase-admin');
-      const db = myAdmin.firestore();
-      const doc = await db.collection('production').doc('production').collection('reviews').doc('3').get();
-      if (doc.exists) {
-        const reviews = doc.data();
-        console.log(reviews)
-
-    }
-    */
-      await sendReviewNotification();
       response.send('ok');
       console.log('OK');         
     }
@@ -63,7 +52,8 @@ export const test = functions.region(REGION).https.onRequest(async (request, res
 
 exports.writeReviewOnExchange = functions.region(REGION).https.onRequest(async (request, response) => {
     try {
-      await setReview(request);
+      const envProd : boolean = request.body['production'];
+      await setReview(request, envProd);
       response.send('done');
     }
     catch (ex) {
@@ -72,21 +62,29 @@ exports.writeReviewOnExchange = functions.region(REGION).https.onRequest(async (
   }
 })
 
-export const sendNotificationToFCMToken2 = functions.region(REGION).firestore.document('production/production/msgs/msgs/exchange-msgs/{mUid}').onWrite(async (change, context) => {
-  await sendNotificationAfterExchangeRequestUpdated(change, context);
+export const listenToExchangeMsgDebug = functions.region(REGION).firestore.document('debug/debug/msgs/msgs/exchange-msgs/{mUid}').onWrite(async (change, context) => {
+  await sendNotificationAfterExchangeRequestUpdated(change, context, false);
+});
+
+export const listenToExchangeMsgProduction = functions.region(REGION).firestore.document('production/production/msgs/msgs/exchange-msgs/{mUid}').onWrite(async (change, context) => {
+  await sendNotificationAfterExchangeRequestUpdated(change, context, true);
 });
 
 exports.sendReviewNotification = functions.region(REGION).pubsub.schedule('0 20 * * *')
   .timeZone('Asia/Jerusalem') // Users can choose timezone - default is America/Los_Angeles
   .onRun(async (context) => {
-    await sendReviewNotification();
+    await sendReviewNotification(true);
+    await sendReviewNotification(false);
+
   return null;
 });
 
 
+/*
 export const privateProfileUpdated = functions.region(REGION).firestore.document('production/production/private-profiles/{guid}').onWrite(async (change, context) => {
-  console.log('privateProfileUpdated')
+  console.log('production privateProfileUpdated')
   await createMoneyDoc(change);
 });
+*/
 
 

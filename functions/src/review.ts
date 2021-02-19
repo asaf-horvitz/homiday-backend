@@ -1,5 +1,6 @@
 
 import { sendTheNotification } from './notification';
+import {Environment} from './environment'
 
 const myAdmin = require('firebase-admin');
 
@@ -17,7 +18,7 @@ const TO_REVIEW_FILLED = 'toReviewFilled'
 const FROM_REVIEW_SENT_NOTIFICATION_TIME = 'fromReviewSentNotificationTime'
 const TO_REVIEW_SENT_NOTIFICATION_TIME = 'toReviewSentNotificationTime'
 
-export async function setReview(request) {
+export async function setReview(request, envProd: boolean) {
     const userIdToReview = request.body.userIdToReview; 
     const reviewerId = request.body.reviewerId
     const exchangeDocId = request.body.exchangeDocId
@@ -27,33 +28,33 @@ export async function setReview(request) {
     date = new Date(request.body['endExchange'])  
     request.body['endExchange'] = myAdmin.firestore.Timestamp.fromDate(date)
 
-    const success : boolean = await setReviewFilledInExchangeMsg(exchangeDocId, reviewerId, userIdToReview)
+    const success : boolean = await setReviewFilledInExchangeMsg(exchangeDocId, reviewerId, userIdToReview, envProd)
     console.log('done writing to exchange msg')
     if (!success) return
 
     // todo check user is same and has confirmed exchange request
     console.log('writing to reviews collection')
-    await writeRevieInsideReviewerDoc(request)
-    await writeRevieInsideMyDetails(request)
+    await writeRevieInsideReviewerDoc(request, envProd)
+    await writeRevieInsideMyDetails(request, envProd)
     console.log('done writing to reviews collection')
-    await updatePublicProfileDocWithReview(userIdToReview, 'public-profiles')
-    await updatePublicProfileDocWithReview(userIdToReview, 'private-profiles')
-    await updatePublicProfileDocWithReview(reviewerId, 'public-profiles')
-    await updatePublicProfileDocWithReview(reviewerId, 'private-profiles')
+    await updatePublicProfileDocWithReview(userIdToReview, 'public-profiles', envProd)
+    await updatePublicProfileDocWithReview(userIdToReview, 'private-profiles', envProd)
+    await updatePublicProfileDocWithReview(reviewerId, 'public-profiles', envProd)
+    await updatePublicProfileDocWithReview(reviewerId, 'private-profiles', envProd)
 }
 
-function getDocPathInCollection(docId) {
-    return db.doc('production/production/reviews/' + docId);
+function getDocPathInCollection(docId, envProd: boolean) {
+    return db.doc(Environment.getFullPath(envProd, 'reviews/' + docId));
 }
 
-async function writeRevieInsideMyDetails(request) {
+async function writeRevieInsideMyDetails(request, envProd: boolean) {
     const body = request.body;
 
     // todo - make sure this users id are valid !!!
     const userIdToReview = body.userIdToReview; 
     const reviewerId = body.reviewerId
 
-    const doc = await getDocPathInCollection(reviewerId).get();
+    const doc = await getDocPathInCollection(reviewerId, envProd).get();
     let reviewsIMade = {};
     let fileExists = false;
     if (doc.exists) {
@@ -66,17 +67,17 @@ async function writeRevieInsideMyDetails(request) {
     const map = {}
     map[REVIEWS_I_MADE] = reviewsIMade
     if (fileExists) {
-        await getDocPathInCollection(reviewerId).update(map);     
+        await getDocPathInCollection(reviewerId, envProd).update(map);     
     }
     else {
         map[REVIEWS_ON_ME] = {}
-        await getDocPathInCollection(reviewerId).set(map);
+        await getDocPathInCollection(reviewerId, envProd).set(map);
     }
 }
 
-async function setReviewFilledInExchangeMsg(exchangeDocId : String, reviewerId : String, userIdToReview : String) : Promise<boolean> {
+async function setReviewFilledInExchangeMsg(exchangeDocId : String, reviewerId : String, userIdToReview : String, envProd: boolean) : Promise<boolean> {
     console.log('setReviewFilledInExchangeMsg 1')
-    const exchangeDoc  = await db.doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).get();
+    const exchangeDoc  = await db.doc(Environment.getFullPath(envProd, 'msgs/msgs/exchange-msgs/' + exchangeDocId)).get();
     
     console.log('setReviewFilledInExchangeMsg 2')
     if (!exchangeDoc.exists)
@@ -96,20 +97,20 @@ async function setReviewFilledInExchangeMsg(exchangeDocId : String, reviewerId :
     else 
         return false
 
-    db.doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).update(map);
+    db.doc(Environment.getFullPath(envProd, 'msgs/msgs/exchange-msgs/' + exchangeDocId)).update(map);
     console.log('updating exchange msg ' + exchangeDocId)
     return true;
 
 }
 
-export async function updatePublicProfileDocWithReview(userId, profileCollection) {
-    const collectionName = 'production/production/' + profileCollection    
+export async function updatePublicProfileDocWithReview(userId, profileCollection, envProd: boolean) {
+    const collectionName = Environment.getFullPath(envProd, profileCollection)
     const querySnapshot  = await db.collection(collectionName).where('userId', '==', userId).get();
     console.log('updating review in profile: ' + collectionName + ', for user ' + userId);
     querySnapshot.forEach(async (doc) => {
         const docId = doc.id;
 
-        const userReviewDetailsDoc = await db.doc('production/production/reviews/' + userId).get();
+        const userReviewDetailsDoc = await db.doc(Environment.getFullPath(envProd,  'reviews/' + userId)).get();
         if (!userReviewDetailsDoc.exists) {
             console.log('didnt find review doc for user ' + userId);
             return;
@@ -123,13 +124,13 @@ export async function updatePublicProfileDocWithReview(userId, profileCollection
       console.log('**** didnt update profile for user ' + userId);
     }
 
-async function writeRevieInsideReviewerDoc(request) {
+async function writeRevieInsideReviewerDoc(request, envProd: boolean) {
     const body = request.body;
     // todo - make sure this users id are valid !!!
     const userIdToReview = body.userIdToReview; 
     const reviewerId = body.reviewerId
 
-    const doc = await getDocPathInCollection(userIdToReview).get();
+    const doc = await getDocPathInCollection(userIdToReview, envProd).get();
     let reviewsOnMe = {};
     let fileExists = false;
     if (doc.exists) {
@@ -154,27 +155,27 @@ async function writeRevieInsideReviewerDoc(request) {
     map[TOTAL_REVIEWS] = totalReviews
     map[REVIEWS_ON_ME] = reviewsOnMe
     if (fileExists) {
-        await getDocPathInCollection(userIdToReview).update(map)
+        await getDocPathInCollection(userIdToReview, envProd).update(map)
     }
     else {
         map[REVIEWS_I_MADE] = {}
-        await getDocPathInCollection(userIdToReview).set(map)
+        await getDocPathInCollection(userIdToReview, envProd).set(map)
     }
 }
 
-export async function sendReviewNotification() {
+export async function sendReviewNotification(envProd : boolean) {
     console.log('inside')
         
-    const querySnapshot  = await db.collection('production/production/msgs/msgs/exchange-msgs').get();
+    const querySnapshot  = await db.collection(Environment.getFullPath(envProd, 'msgs/msgs/exchange-msgs')).get();
     
     querySnapshot.forEach(async (doc) => {
         const json = doc.data()
-        await sendNotificationToSingleUser(true, json, doc.id);
-        await sendNotificationToSingleUser(false, json, doc.id);
+        await sendNotificationToSingleUser(true, json, doc.id, envProd);
+        await sendNotificationToSingleUser(false, json, doc.id, envProd);
     });
 }
 
-async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeDocId : String) : Promise<boolean> {
+async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeDocId : String, envProd: boolean) : Promise<boolean> {
     const endExchangeDate = json['endExchange']
 
     const currSeconds = (new Date(Date.now())).getTime() / 1000;
@@ -188,21 +189,21 @@ async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeD
 
     console.log('send review notification to ' + json[getUserIdFieldName(from)]);
 
-    await sendNotificationOperation(json[getUserIdFieldName(from)]);
+    await sendNotificationOperation(json[getUserIdFieldName(from)], envProd);
 
     const map = {}
     map[getNotificationTimeFieldName(from)] = myAdmin.firestore.Timestamp.now()
 
-    await myAdmin.firestore().doc('production/production/msgs/msgs/exchange-msgs/' + exchangeDocId).update(map);
+    await myAdmin.firestore().doc(Environment.getFullPath(envProd,  'msgs/msgs/exchange-msgs/' + exchangeDocId)).update(map);
     console.log('notification sent for exchange doc ' + exchangeDocId)    
 
     return true;
 }
 
-async function sendNotificationOperation(userId: String, ) {
+async function sendNotificationOperation(userId: String, envProd: boolean) {
     const title = 'איך הייתה ההחלפה שלכם ?';
     const content = 'הכנסו לאפליקציה ומלאו חוות דעת'
-    await sendTheNotification(userId, title, content);
+    await sendTheNotification(userId, title, content,envProd);
 }
 
 function getNotificationTimeFieldName(from : boolean) : string{
