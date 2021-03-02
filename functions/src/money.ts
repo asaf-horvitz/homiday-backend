@@ -10,7 +10,7 @@ function getDocPathInCollection(docId) {
 export async function createMoneyDoc(change) {
     const userId = change.after.get('userId');
     const adults = change.after.get('adults');
-    if (adults == undefined) return;
+    if (adults === undefined) return;
     if (adults <= 0) return;
     await createMoneyDocInDB(userId)
 }

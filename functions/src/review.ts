@@ -87,7 +87,7 @@ async function setReviewFilledInExchangeMsg(exchangeDocId : String, reviewerId :
     const json = exchangeDoc.data();
     if (json['status'] !== 'enumMsgStatus.confirmed') return false
 
-    let map = {}
+    const map = {}
     if (json['from'] === reviewerId) {
         map[FROM_REVIEW_FILLED] = true
     }

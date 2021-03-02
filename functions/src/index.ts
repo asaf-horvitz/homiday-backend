@@ -3,7 +3,7 @@
 
 import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
-import {setReview, updatePublicProfileDocWithReview, sendReviewNotification} from './review';
+import {setReview, sendReviewNotification} from './review';
 import {sendNotificationAfterExchangeRequestUpdated} from './notification';
 import {createMoneyDoc} from './money'
 

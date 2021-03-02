@@ -21,7 +21,7 @@ export async function sendTheNotification(userId : String, title: String, conten
 
 export async function sendNotificationAfterExchangeRequestUpdated(change, context, envProd) {
     try{    
-        let exchangeMsg = new ExchangeMsg(change)
+        const exchangeMsg = new ExchangeMsg(change)
 
         console.log(change.after.data() );
         
