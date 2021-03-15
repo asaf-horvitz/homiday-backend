@@ -63,10 +63,8 @@ export async function getLocationFromPlaceId(placeId: string) {
   }
   
   export async function handleAutoComplete(sessionId : string, word: string)  {
-    let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?&input="{0}"&key={1}&sessiontoken={2}';
-    url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId));
-  
-    '&types=(regions)'
+    let url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?&input="{0}"&key={1}&sessiontoken={2}&type=address';
+    url = encodeURI(FormatString(url, word, GOOGLE_API, sessionId));  
     console.log('before');
     const res = await axios.post(url);
     const results: any = [];
