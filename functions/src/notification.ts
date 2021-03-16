@@ -3,8 +3,8 @@ import {ExchangeMsg} from './exchange_msgs'
 import {Environment} from './environment'
 
 export async function sendTheNotification(userId : String, title: String, content: string, envProd: boolean) {
-    const userDoc = await myAdmin.firestore().doc(Environment.getFullPath(envProd, 'notification-tokens/' + userId)).get();
-    const fcmToken = userDoc.get('token');
+    const userDoc = await myAdmin.firestore().doc(Environment.getFullPath(envProd, 'private-profiles/' + userId)).get();
+    const fcmToken = userDoc.get('notificationToken');
     const message = {
         notification: {
             title: title,
