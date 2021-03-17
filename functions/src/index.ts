@@ -5,7 +5,7 @@ import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
 import {setReview, sendReviewNotification} from './review';
 import {sendNotificationAfterExchangeRequestUpdated} from './notification';
-import {createMoneyDoc} from './money'
+import {Profiles} from './profiles'
 
 // in order for the initialization in firebase to be called
 myFirebase.init()
@@ -13,7 +13,6 @@ myFirebase.init()
 const REGION = 'us-east1'
 
 import {getLocationFromPlaceId, handleAutoComplete} from './google_maps_api';
-import { print } from 'util';
 //import { admin } from 'firebase-admin/lib/credential';
 
 export const getLocationDetailsFromPlaceId = functions.region(REGION).https.onRequest(async (request, response) => {
@@ -43,6 +42,19 @@ export const test = functions.region(REGION).https.onRequest(async (request, res
     try {
       response.send('ok');
       console.log('OK');         
+    }
+    catch (ex) {
+        console.log(ex);         
+        response.status(500).send(ex);
+      }
+  });
+
+  export const profileDelSpecificOne = functions.region(REGION).https.onRequest(async (request, response) => {
+    try {
+      const body = request.body;
+      const responseTxt = await (new Profiles()).deleteProfileRequest(body.version, body.code,body.userId)
+      response.send(responseTxt);
+      console.log(responseTxt);         
     }
     catch (ex) {
         console.log(ex);         
