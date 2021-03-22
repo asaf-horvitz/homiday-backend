@@ -64,7 +64,7 @@ export async function sendNotificationForNewConversation(newMsg, envProd : boole
 
     const userDoc = await myAdmin.firestore().doc(Environment.getFullPath(envProd, 'private-profiles/' + receiver)).get();
     const houseName = userDoc.get('houseName');
-    sendTheNotification(receiver, 'new message', houseName, envProd);
+    await sendTheNotification(receiver, 'new message', houseName, envProd);
 }
 
 async function timeToSendMsg(envProd, sender, receiver) {
