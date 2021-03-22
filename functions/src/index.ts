@@ -4,7 +4,7 @@
 import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
 import {setReview, sendReviewNotification} from './review';
-import {sendNotificationAfterExchangeRequestUpdated} from './notification';
+import {sendNotificationAfterExchangeRequestUpdated, sendNotificationForNewConversation} from './notification';
 import {Profiles} from './profiles'
 
 // in order for the initialization in firebase to be called
@@ -92,6 +92,13 @@ exports.sendReviewNotification = functions.region(REGION).pubsub.schedule('0 20 
   return null;
 });
 
+export const newMsgArrivedProudction = functions.region(REGION).firestore.document('production/production/msgs/msgs/chat-msgs/{mUid}').onWrite(async (change, context) => {
+  await sendNotificationForNewConversation(change, true);
+});
+
+export const newMsgArrivedDebug = functions.region(REGION).firestore.document('debug/debug/msgs/msgs/chat-msgs/{mUid}').onWrite(async (change, context) => {
+  await sendNotificationForNewConversation(change, false);
+});
 
 /*
 export const privateProfileUpdated = functions.region(REGION).firestore.document('production/production/private-profiles/{guid}').onWrite(async (change, context) => {
