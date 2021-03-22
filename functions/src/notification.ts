@@ -53,9 +53,14 @@ export async function sendNotificationAfterExchangeRequestUpdated(change, contex
 }
 
 
-function lastMsgReadTimeDoc(envProd : boolean, userId: string) {
+function getLastMsgReadTimeDoc(envProd : boolean, userId: string) {
     return myAdmin.firestore().doc(Environment.getFullPath(envProd, 'msgs/msgs/last-msg-read-time/' + userId));
 }
+
+function getLastMsgNotificationTimeDoc(envProd : boolean, userId: string) {
+    return myAdmin.firestore().doc(Environment.getFullPath(envProd, 'msgs/msgs/last-msg-notification-time/' + userId));
+}
+
 
 export async function sendNotificationForNewConversation(newMsg, envProd : boolean) {
     const receiver : string = newMsg.after.get('to')
@@ -69,32 +74,36 @@ export async function sendNotificationForNewConversation(newMsg, envProd : boole
 
 async function timeToSendMsg(envProd, sender, receiver) {
 
-    const LAST_NOTIFICATION_SENT_FOR_USER = 'lastNotificationSentForUserMap'
-    let lastMsgsdoc = await lastMsgReadTimeDoc(envProd, receiver).get();
+    let lastMsgsdoc = await getLastMsgReadTimeDoc(envProd, receiver).get();
+    let lastMsgsNotificationdoc = await getLastMsgNotificationTimeDoc(envProd, receiver).get();
 
     if (!lastMsgsdoc.exists) {
-        await lastMsgReadTimeDoc(envProd, receiver).set({});
-        lastMsgsdoc = await lastMsgReadTimeDoc(envProd, receiver).get();
+        await getLastMsgReadTimeDoc(envProd, receiver).set({});
+        lastMsgsdoc = await getLastMsgReadTimeDoc(envProd, receiver).get();
+    } 
+
+    if (!lastMsgsNotificationdoc.exists) {
+        await getLastMsgNotificationTimeDoc(envProd, receiver).set({});
+        lastMsgsNotificationdoc = await getLastMsgNotificationTimeDoc(envProd, receiver).get();
     } 
 
     let sendNotificationNow : boolean = false
 
     const timeSenderMsgReadByReceiver = lastMsgsdoc.data()[sender];
-    const lastNotificationSentMap = lastMsgsdoc.data()[LAST_NOTIFICATION_SENT_FOR_USER] === undefined ? {} : lastMsgsdoc.data()[LAST_NOTIFICATION_SENT_FOR_USER]
     // const lastEnterToMsgCenter = lastMsgRead.data()['msg_center'];
-    const senderNotificationTime = lastNotificationSentMap[sender]
-    if (senderNotificationTime === undefined ) 
+    const lastSenderNotificationTime = lastMsgsNotificationdoc.data()[sender];
+
+    if (lastSenderNotificationTime === undefined ) 
         sendNotificationNow = true;
     else if (timeSenderMsgReadByReceiver === undefined)
         sendNotificationNow = false
-    else if (timeSenderMsgReadByReceiver > senderNotificationTime)
+    else if (timeSenderMsgReadByReceiver > lastSenderNotificationTime)
         sendNotificationNow = true
 
     if (sendNotificationNow) {
-        lastNotificationSentMap[sender] = myAdmin.firestore.Timestamp.now()
         const map = {}
-        map[LAST_NOTIFICATION_SENT_FOR_USER] = lastNotificationSentMap
-        await lastMsgReadTimeDoc(envProd, receiver).update(map);
+        map[sender] = myAdmin.firestore.Timestamp.now()
+        await getLastMsgNotificationTimeDoc(envProd, receiver).update(map);
     }
 
     return sendNotificationNow
