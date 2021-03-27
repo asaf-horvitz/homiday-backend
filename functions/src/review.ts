@@ -184,7 +184,7 @@ async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeD
 
     if (json[getReviewFilledFieldName(from)] === true) 
         return false
-    if (json[getNotificationTimeFieldName(from)] === true) 
+    if (json[getNotificationTimeFieldName(from)] === undefined || json[getNotificationTimeFieldName(from)] === null) 
         return false
 
     console.log('send review notification to ' + json[getUserIdFieldName(from)]);
