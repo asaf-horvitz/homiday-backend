@@ -177,11 +177,16 @@ export async function sendReviewNotification(envProd : boolean) {
 
 async function sendNotificationToSingleUser(from : boolean, json : {}, exchangeDocId : String, envProd: boolean) : Promise<boolean> {
     const endExchangeDate = json['endExchange']
+    const status = json['status']
+
+    if (!status.includes('confirm')) return false
 
     const currSeconds = (new Date(Date.now())).getTime() / 1000;
+
+
     if (endExchangeDate.seconds + (24*60*60) > currSeconds) 
         return false
-
+    
     if (json[getReviewFilledFieldName(from)] === true) 
         return false
     if (json[getNotificationTimeFieldName(from)] === undefined || json[getNotificationTimeFieldName(from)] === null) 
