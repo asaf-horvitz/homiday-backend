@@ -3,74 +3,82 @@
 
 import * as functions from 'firebase-functions';
 import * as myFirebase from './firebase';
-import {setReview, sendReviewNotification} from './review';
-import {sendNotificationAfterExchangeRequestUpdated, sendNotificationForNewConversation} from './notification';
-import {Profiles} from './profiles'
+import { setReview, sendReviewNotification } from './review';
+import { sendNotificationAfterExchangeRequestUpdated, sendNotificationForNewConversation } from './notification';
+import { Profiles } from './profiles'
 
 // in order for the initialization in firebase to be called
 myFirebase.init()
 
 const REGION = 'us-east1'
 
-import {getLocationFromPlaceId, handleAutoComplete} from './google_maps_api';
+import { getLocationFromPlaceId, handleAutoComplete } from './google_maps_api';
 //import { admin } from 'firebase-admin/lib/credential';
 
-export const getLocationDetailsFromPlaceId = functions.region(REGION).https.onRequest(async (request, response) => {
-    try {    
-      const locationDetails = await getLocationFromPlaceId(request.body.placeId);
-      response.send(locationDetails);
-    }
-    catch (ex) {
-      console.log(ex);         
-      response.status(500).send(ex);
-    }
-  });
+// 1. Import the agent package
+// Make sure that you have esModuleInterop set to true
+// in compilerOptions in your tsconfig.json!
+import backupfireAgent from '@backupfire/firebase';
 
-export const autoComplete = functions.region(REGION).https.onRequest(async (request, response) => {  
-    try {
-      const body = request.body;
-      const results: [] = await handleAutoComplete(body.sessionId, body.place);
-      response.send(results);
-    }
-    catch (ex) {
-        console.log(ex);    
-        response.status(500).send(ex);
-    }
-  });
+// 2. Create and export the agent
+export const backupfire = backupfireAgent();
+
+export const getLocationDetailsFromPlaceId = functions.region(REGION).https.onRequest(async (request, response) => {
+  try {
+    const locationDetails = await getLocationFromPlaceId(request.body.placeId);
+    response.send(locationDetails);
+  }
+  catch (ex) {
+    console.log(ex);
+    response.status(500).send(ex);
+  }
+});
+
+export const autoComplete = functions.region(REGION).https.onRequest(async (request, response) => {
+  try {
+    const body = request.body;
+    const results: [] = await handleAutoComplete(body.sessionId, body.place);
+    response.send(results);
+  }
+  catch (ex) {
+    console.log(ex);
+    response.status(500).send(ex);
+  }
+});
 
 export const test = functions.region(REGION).https.onRequest(async (request, response) => {
-    try {
-      response.send('ok');
-      console.log('OK');         
-    }
-    catch (ex) {
-        console.log(ex);         
-        response.status(500).send(ex);
-      }
-  });
+  try {
+    response.send('ok');
+    console.log('OK');
+  }
+  catch (ex) {
+    console.log(ex);
+    response.status(500).send(ex);
+  }
+});
 
-  export const profileDelSpecificOne = functions.region(REGION).https.onRequest(async (request, response) => {
-    try {
-      const body = request.body;
-      const responseTxt = await (new Profiles()).deleteProfileRequest(body.version, body.code,body.userId)
-      response.send(responseTxt);
-      console.log(responseTxt);         
-    }
-    catch (ex) {
-        console.log(ex);         
-        response.status(500).send(ex);
-      }
-  });
+export const profileDelSpecificOne = functions.region(REGION).https.onRequest(async (request, response) => {
+  try {
+    const body = request.body;
+    const responseTxt = await (new Profiles()).deleteProfileRequest(body.version, body.code, body.userId)
+    response.send(responseTxt);
+    console.log(responseTxt);
+  }
+  catch (ex) {
+    console.log(ex);
+    response.status(500).send(ex);
+  }
+});
 
 exports.writeReviewOnExchange = functions.region(REGION).https.onRequest(async (request, response) => {
-    try {
-      const envProd : boolean = request.body['production'];
-      await setReview(request, envProd);
-      response.send('done');
-    }
-    catch (ex) {
-      console.log(ex);         
-      response.status(500).send(ex);
+  try {
+    const envProd: boolean = request.body['production'];
+    await setReview(request, envProd);
+    response.send('done');
+  }
+  catch (ex) {
+    console.log(ex);
+    response.status(500).send(ex);
   }
 })
 
@@ -89,8 +97,8 @@ exports.sendReviewNotification = functions.region(REGION).pubsub.schedule('0 20 
     await sendReviewNotification(true);
     await sendReviewNotification(false);
 
-  return null;
-});
+    return null;
+  });
 
 export const newMsgArrivedProudction = functions.region(REGION).firestore.document('production/production/msgs/msgs/chat-msgs/{mUid}').onWrite(async (change, context) => {
   await sendNotificationForNewConversation(change, true);
