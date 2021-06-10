@@ -12,7 +12,7 @@
   },
   "emulators": {
     "functions": {
-      "port": 5001
+      "port": 8081
     },
     "ui": {
       "enabled": true

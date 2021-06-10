@@ -15,37 +15,61 @@ const REGION = 'us-east1'
 import {getLocationFromPlaceId, handleAutoComplete} from './google_maps_api';
 //import { admin } from 'firebase-admin/lib/credential';
 
+function _sendResponse(response: functions.Response<any>, body : any) {
+  response.set("Access-Control-Allow-Origin", "*");
+  response.set("Access-Control-Allow-Methods", "GET,POST");
+  response.set("Access-Control-Allow-Headers", "*");
+  response.send(body);
+  console.log(body)
+}
+
+function _sendResponse500Status(response: functions.Response<any>, ex : any) {
+  response.set("Access-Control-Allow-Origin", "*");
+  response.set("Access-Control-Allow-Methods", "GET,POST");
+  response.set("Access-Control-Allow-Headers", "*");
+  response.status(500).send(ex);
+  console.log(ex);
+}
+
 export const getLocationDetailsFromPlaceId = functions.region(REGION).https.onRequest(async (request, response) => {
     try {    
       const locationDetails = await getLocationFromPlaceId(request.body.placeId);
-      response.send(locationDetails);
+      _sendResponse(response, locationDetails);
     }
     catch (ex) {
-      console.log(ex);         
-      response.status(500).send(ex);
+      _sendResponse500Status(response, ex);
     }
   });
+
+  export const autoComplete2 = functions.region(REGION).https.onRequest(async (request, response) => {  
+    try {
+      const body = request.body;
+      const results: [] = await handleAutoComplete(body.sessionId, body.place);
+      _sendResponse(response, results);
+    }
+    catch (ex) {
+        _sendResponse500Status(response, ex);
+    }
+  });
+
 
 export const autoComplete = functions.region(REGION).https.onRequest(async (request, response) => {  
     try {
       const body = request.body;
       const results: [] = await handleAutoComplete(body.sessionId, body.place);
-      response.send(results);
+      _sendResponse(response, results);
     }
     catch (ex) {
-        console.log(ex);    
-        response.status(500).send(ex);
+      _sendResponse500Status(response, ex);
     }
   });
 
 export const test = functions.region(REGION).https.onRequest(async (request, response) => {
     try {
-      response.send('ok');
-      console.log('OK');         
+      _sendResponse(response, 'ok');
     }
     catch (ex) {
-        console.log(ex);         
-        response.status(500).send(ex);
+      _sendResponse500Status(response, ex);
       }
   });
 
@@ -53,12 +77,11 @@ export const test = functions.region(REGION).https.onRequest(async (request, res
     try {
       const body = request.body;
       const responseTxt = await (new Profiles()).deleteProfileRequest(body.version, body.code,body.userId)
-      response.send(responseTxt);
+      _sendResponse(response, responseTxt);
       console.log(responseTxt);         
     }
     catch (ex) {
-        console.log(ex);         
-        response.status(500).send(ex);
+      _sendResponse500Status(response, ex);
       }
   });
 
@@ -66,7 +89,7 @@ exports.writeReviewOnExchange = functions.region(REGION).https.onRequest(async (
     try {
       const envProd : boolean = request.body['production'];
       await setReview(request, envProd);
-      response.send('done');
+      _sendResponse(response, 'done');
     }
     catch (ex) {
       console.log(ex);         

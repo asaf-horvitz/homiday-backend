@@ -29,6 +29,12 @@ export async function getLocationFromPlaceId(placeId: string) {
         addIsraelIfNeeded(location)        
       }
 
+      location['type'] = ''
+      try {
+        location['type'] = (res.data.results[0].types[0]);
+      }
+      catch {}
+
       return location
     }
     catch (ex) {
